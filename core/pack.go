@@ -54,26 +54,26 @@ func LoadPack() (Pack, error) {
 
 	// Check pack-format
 	if len(modpack.PackFormat) == 0 {
-		fmt.Println("Modpack manifest has no pack-format field; assuming packwiz:1.1.0")
+		fmt.Println("模组包清单没有 pack-format 字段；假设为 packwiz:1.1.0")
 		modpack.PackFormat = "packwiz:1.1.0"
 	}
 	// Auto-migrate versions
 	if modpack.PackFormat == "packwiz:1.0.0" {
-		fmt.Println("Automatically migrating pack to packwiz:1.1.0 format...")
+		fmt.Println("正在自动将 pack 迁移到 packwiz:1.1.0 格式...")
 		modpack.PackFormat = "packwiz:1.1.0"
 	}
 	if !strings.HasPrefix(modpack.PackFormat, "packwiz:") {
-		return Pack{}, errors.New("pack-format field does not indicate a valid packwiz pack")
+		return Pack{}, errors.New("pack-format 字段未指示有效的 packwiz pack")
 	}
 	ver, err := semver.StrictNewVersion(strings.TrimPrefix(modpack.PackFormat, "packwiz:"))
 	if err != nil {
-		return Pack{}, fmt.Errorf("pack-format field is not valid semver: %w", err)
+		return Pack{}, fmt.Errorf("pack-format 字段不是有效的 semver：%w", err)
 	}
 	if !PackFormatConstraintAccepted.Check(ver) {
-		return Pack{}, errors.New("the modpack is incompatible with this version of packwiz; please update")
+		return Pack{}, errors.New("modpack 与此版本的 packwiz 不兼容；请更新 packwiz")
 	}
 	if !PackFormatConstraintSuggestUpgrade.Check(ver) {
-		fmt.Println("Modpack has a newer feature number than is supported by this version of packwiz. Update to the latest version of packwiz for new features and bugfixes!")
+		fmt.Println("modpack 的功能版本号高于此 packwiz 版本支持的版本。更新到最新版本的 packwiz 以获取新功能和错误修复！")
 	}
 	// TODO: suggest migration if necessary (primarily for 2.0.0)
 
@@ -157,7 +157,7 @@ func (pack Pack) Write() error {
 func (pack Pack) GetMCVersion() (string, error) {
 	mcVersion, ok := pack.Versions["minecraft"]
 	if !ok {
-		return "", errors.New("no minecraft version specified in modpack")
+		return "", errors.New("modpack 中未指定 minecraft 版本")
 	}
 	return mcVersion, nil
 }
@@ -166,7 +166,7 @@ func (pack Pack) GetMCVersion() (string, error) {
 func (pack Pack) GetSupportedMCVersions() ([]string, error) {
 	mcVersion, ok := pack.Versions["minecraft"]
 	if !ok {
-		return nil, errors.New("no minecraft version specified in modpack")
+		return nil, errors.New("modpack 中未指定 minecraft 版本")
 	}
 	allVersions := append(append([]string(nil), viper.GetStringSlice("acceptable-game-versions")...), mcVersion)
 	// Deduplicate values

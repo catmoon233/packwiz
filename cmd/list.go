@@ -14,7 +14,7 @@ import (
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all the mods in the modpack",
+	Short: "列出模组包中的所有模组",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -43,7 +43,7 @@ var listCmd = &cobra.Command{
 		if viper.IsSet("list.side") {
 			side := viper.GetString("list.side")
 			if side != core.UniversalSide && side != core.ServerSide && side != core.ClientSide {
-				fmt.Printf("Invalid side %q, must be one of client, server, or both (default)\n", side)
+				fmt.Printf("无效的侧边 %q，必须是 client、server 或 both（默认）\n", side)
 				os.Exit(1)
 			}
 
@@ -77,9 +77,9 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	listCmd.Flags().BoolP("version", "v", false, "Print name and version")
+	listCmd.Flags().BoolP("version", "v", false, "打印名称和版本")
 	_ = viper.BindPFlag("list.version", listCmd.Flags().Lookup("version"))
-	listCmd.Flags().StringP("side", "s", "", "Filter mods by side (e.g., client or server)")
+	listCmd.Flags().StringP("side", "s", "", "按侧边筛选模组（例如，client 或 server）")
 	_ = viper.BindPFlag("list.side", listCmd.Flags().Lookup("side"))
 
 }

@@ -94,7 +94,7 @@ func FetchMavenVersionFiltered(url string, friendlyName string, filter func(vers
 			}
 		}
 		if len(allowedVersions) == 0 {
-			return []string{}, "", errors.New("no " + friendlyName + " versions available for this Minecraft version")
+			return []string{}, "", errors.New("此 Minecraft 版本没有可用的 " + friendlyName + " 版本")
 		}
 		if filter(out.Versioning.Release, mcVersion) {
 			return allowedVersions, out.Versioning.Release, nil

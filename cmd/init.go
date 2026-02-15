@@ -19,15 +19,15 @@ import (
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialise a packwiz modpack",
+	Short: "初始化 packwiz 模组包",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		_, err := os.Stat(viper.GetString("pack-file"))
 		if err == nil && !viper.GetBool("init.reinit") {
-			fmt.Println("Modpack metadata file already exists, use -r to override!")
+			fmt.Println("模组包元数据文件已存在，使用 -r 覆盖！")
 			os.Exit(1)
 		} else if err != nil && !os.IsNotExist(err) {
-			fmt.Printf("Error checking pack file: %s\n", err)
+			fmt.Printf("检查模组包文件时出错：%s\n", err)
 			os.Exit(1)
 		}
 
@@ -42,25 +42,25 @@ var initCmd = &cobra.Command{
 			if directoryName != "." && len(directoryName) > 0 {
 				// Turn directory name into a space-seperated proper name
 				name = titlecase.Title(strings.ReplaceAll(strings.ReplaceAll(strings.Join(camelcase.Split(directoryName), " "), " - ", " "), " _ ", " "))
-				name = initReadValue("Modpack name ["+name+"]: ", name)
+				name = initReadValue("模组包名称 ["+name+"]：", name)
 			} else {
-				name = initReadValue("Modpack name: ", "")
+				name = initReadValue("模组包名称：", "")
 			}
 		}
 
 		author, err := cmd.Flags().GetString("author")
 		if err != nil || len(author) == 0 {
-			author = initReadValue("Author: ", "")
+			author = initReadValue("作者：", "")
 		}
 
 		version, err := cmd.Flags().GetString("version")
 		if err != nil || len(version) == 0 {
-			version = initReadValue("Version [1.0.0]: ", "1.0.0")
+			version = initReadValue("版本 [1.0.0]：", "1.0.0")
 		}
 
 		mcVersions, err := cmdshared.GetValidMCVersions()
 		if err != nil {
-			fmt.Printf("Failed to get latest minecraft versions: %s\n", err)
+			fmt.Printf("获取最新 Minecraft 版本失败：%s\n", err)
 			os.Exit(1)
 		}
 
@@ -75,14 +75,14 @@ var initCmd = &cobra.Command{
 			if viper.GetBool("init.latest") {
 				mcVersion = latestVersion
 			} else {
-				mcVersion = initReadValue("Minecraft version ["+latestVersion+"]: ", latestVersion)
+				mcVersion = initReadValue("Minecraft 版本 ["+latestVersion+"]：", latestVersion)
 			}
 		}
 		mcVersions.CheckValid(mcVersion)
 
 		modLoaderName := strings.ToLower(viper.GetString("init.modloader"))
 		if len(modLoaderName) == 0 {
-			modLoaderName = strings.ToLower(initReadValue("Mod loader [quilt]: ", "quilt"))
+			modLoaderName = strings.ToLower(initReadValue("模组加载器 [quilt]：", "quilt"))
 		}
 
 		loader, ok := core.ModLoaders[modLoaderName]
@@ -91,7 +91,7 @@ var initCmd = &cobra.Command{
 			if ok {
 				versions, latestVersion, err := loader.VersionListGetter(mcVersion)
 				if err != nil {
-					fmt.Printf("Error loading versions: %s\n", err)
+					fmt.Printf("加载版本时出错：%s\n", err)
 					os.Exit(1)
 				}
 				componentVersion := viper.GetString("init." + loader.Name + "-version")
@@ -99,7 +99,7 @@ var initCmd = &cobra.Command{
 					if viper.GetBool("init." + loader.Name + "-latest") {
 						componentVersion = latestVersion
 					} else {
-						componentVersion = initReadValue(loader.FriendlyName+" version ["+latestVersion+"]: ", latestVersion)
+						componentVersion = initReadValue(loader.FriendlyName+" 版本 ["+latestVersion+"]：", latestVersion)
 					}
 				}
 				v := componentVersion
@@ -109,13 +109,13 @@ var initCmd = &cobra.Command{
 					v = cmdshared.GetRawForgeVersion(componentVersion)
 				}
 				if !slices.Contains(versions, v) {
-					fmt.Println("Given " + loader.FriendlyName + " version cannot be found!")
+					fmt.Println("找不到指定的 " + loader.FriendlyName + " 版本！")
 					os.Exit(1)
 				}
 				modLoaderVersions[loader.Name] = v
 			} else {
-				fmt.Println("Given mod loader is not supported! Use \"none\" to specify no modloader, or to configure one manually.")
-				fmt.Print("The following mod loaders are supported: ")
+				fmt.Println("指定的模组加载器不受支持！使用 \"none\" 指定无模组加载器，或手动配置一个。")
+				fmt.Print("支持以下模组加载器：")
 				keys := make([]string, len(core.ModLoaders))
 				i := 0
 				for k := range core.ModLoaders {
@@ -136,9 +136,9 @@ var initCmd = &cobra.Command{
 				fmt.Printf("Error creating index file: %s\n", err)
 				os.Exit(1)
 			}
-			fmt.Println(indexFilePath + " created!")
+			fmt.Println(indexFilePath + " 已创建！")
 		} else if err != nil {
-			fmt.Printf("Error checking index file: %s\n", err)
+			fmt.Printf("检查索引文件时出错：%s\n", err)
 			os.Exit(1)
 		}
 
@@ -191,34 +191,34 @@ var initCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Println(viper.GetString("pack-file") + " created!")
+		fmt.Println(viper.GetString("pack-file") + " 已创建！")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(initCmd)
 
-	initCmd.Flags().String("name", "", "The name of the modpack (omit to define interactively)")
-	initCmd.Flags().String("author", "", "The author of the modpack (omit to define interactively)")
-	initCmd.Flags().String("version", "", "The version of the modpack (omit to define interactively)")
-	initCmd.Flags().String("index-file", "index.toml", "The index file to use")
+	initCmd.Flags().String("name", "", "模组包名称（省略以交互方式定义）")
+	initCmd.Flags().String("author", "", "模组包作者（省略以交互方式定义）")
+	initCmd.Flags().String("version", "", "模组包版本（省略以交互方式定义）")
+	initCmd.Flags().String("index-file", "index.toml", "要使用的索引文件")
 	_ = viper.BindPFlag("init.index-file", initCmd.Flags().Lookup("index-file"))
-	initCmd.Flags().String("mc-version", "", "The Minecraft version to use (omit to define interactively)")
+	initCmd.Flags().String("mc-version", "", "要使用的 Minecraft 版本（省略以交互方式定义）")
 	_ = viper.BindPFlag("init.mc-version", initCmd.Flags().Lookup("mc-version"))
-	initCmd.Flags().BoolP("latest", "l", false, "Automatically select the latest version of Minecraft")
+	initCmd.Flags().BoolP("latest", "l", false, "自动选择最新的 Minecraft 版本")
 	_ = viper.BindPFlag("init.latest", initCmd.Flags().Lookup("latest"))
-	initCmd.Flags().BoolP("snapshot", "s", false, "Use the latest snapshot version with --latest")
+	initCmd.Flags().BoolP("snapshot", "s", false, "与 --latest 一起使用最新的快照版本")
 	_ = viper.BindPFlag("init.snapshot", initCmd.Flags().Lookup("snapshot"))
-	initCmd.Flags().BoolP("reinit", "r", false, "Recreate the pack file if it already exists, rather than exiting")
+	initCmd.Flags().BoolP("reinit", "r", false, "如果文件已存在，重新创建模组包文件而不是退出")
 	_ = viper.BindPFlag("init.reinit", initCmd.Flags().Lookup("reinit"))
-	initCmd.Flags().String("modloader", "", "The mod loader to use (omit to define interactively)")
+	initCmd.Flags().String("modloader", "", "要使用的模组加载器（省略以交互方式定义）")
 	_ = viper.BindPFlag("init.modloader", initCmd.Flags().Lookup("modloader"))
 
 	// ok this is epic
 	for _, loader := range core.ModLoaders {
-		initCmd.Flags().String(loader.Name+"-version", "", "The "+loader.FriendlyName+" version to use (omit to define interactively)")
+		initCmd.Flags().String(loader.Name+"-version", "", "要使用的 "+loader.FriendlyName+" 版本（省略以交互方式定义）")
 		_ = viper.BindPFlag("init."+loader.Name+"-version", initCmd.Flags().Lookup(loader.Name+"-version"))
-		initCmd.Flags().Bool(loader.Name+"-latest", false, "Automatically select the latest version of "+loader.FriendlyName)
+		initCmd.Flags().Bool(loader.Name+"-latest", false, "自动选择最新的 "+loader.FriendlyName+" 版本")
 		_ = viper.BindPFlag("init."+loader.Name+"-latest", initCmd.Flags().Lookup(loader.Name+"-latest"))
 	}
 }
@@ -231,7 +231,7 @@ func initReadValue(prompt string, def string) string {
 	}
 	value, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
-		fmt.Printf("Error reading input: %s\n", err)
+		fmt.Printf("读取输入时出错：%s\n", err)
 		os.Exit(1)
 	}
 	// Trims both CR and LF

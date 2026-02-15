@@ -15,7 +15,7 @@ import (
 // rehashCmd represents the rehash command
 var rehashCmd = &cobra.Command{
 	Use:   "rehash [hash format]",
-	Short: "Migrate all hashes to a specific format",
+	Short: "将所有哈希迁移到特定格式",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -41,13 +41,13 @@ var rehashCmd = &cobra.Command{
 		}
 
 		if !slices.Contains([]string{"sha1", "sha512", "sha256"}, args[0]) {
-			fmt.Printf("Hash format '%s' is not supported\n", args[0])
+			fmt.Printf("不支持的哈希格式 '%s'\n", args[0])
 			os.Exit(1)
 		}
 
 		session, err := core.CreateDownloadSession(mods, []string{args[0]})
 		if err != nil {
-			fmt.Printf("Error retrieving external files: %v\n", err)
+			fmt.Printf("获取外部文件时出错：%v\n", err)
 			os.Exit(1)
 		}
 
@@ -55,13 +55,13 @@ var rehashCmd = &cobra.Command{
 
 		for dl := range session.StartDownloads() {
 			if dl.Error != nil {
-				fmt.Printf("Error retrieving %s: %v\n", dl.Mod.Name, dl.Error)
+				fmt.Printf("获取 %s 时出错：%v\n", dl.Mod.Name, dl.Error)
 			} else {
 				dl.Mod.Download.HashFormat = args[0]
 				dl.Mod.Download.Hash = dl.Hashes[args[0]]
 				_, _, err := dl.Mod.Write()
 				if err != nil {
-					fmt.Printf("Error saving mod %s: %v\n", dl.Mod.Name, err)
+					fmt.Printf("保存模组 %s 时出错：%v\n", dl.Mod.Name, err)
 					os.Exit(1)
 				}
 			}
@@ -70,31 +70,31 @@ var rehashCmd = &cobra.Command{
 
 		err = session.SaveIndex()
 		if err != nil {
-			fmt.Printf("Error saving cache index: %v\n", err)
+			fmt.Printf("保存缓存索引时出错：%v\n", err)
 			os.Exit(1)
 		}
 
 		err = index.Refresh()
 		if err != nil {
-			fmt.Printf("Error refreshing index: %v\n", err)
+			fmt.Printf("刷新索引时出错：%v\n", err)
 			os.Exit(1)
 		}
 
 		err = index.Write()
 		if err != nil {
-			fmt.Printf("Error writing index: %v\n", err)
+			fmt.Printf("写入索引时出错：%v\n", err)
 			os.Exit(1)
 		}
 
 		err = pack.UpdateIndexHash()
 		if err != nil {
-			fmt.Printf("Error updating index hash: %v\n", err)
+			fmt.Printf("更新索引哈希时出错：%v\n", err)
 			os.Exit(1)
 		}
 
 		err = pack.Write()
 		if err != nil {
-			fmt.Printf("Error writing pack: %v\n", err)
+			fmt.Printf("写入模组包时出错：%v\n", err)
 			os.Exit(1)
 		}
 	},

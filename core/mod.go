@@ -72,7 +72,7 @@ func LoadMod(modFile string) (Mod, error) {
 			}
 			mod.updateData[k] = updateData
 		} else {
-			return mod, errors.New("Update plugin " + k + " not found!")
+			return mod, errors.New("未找到更新插件 " + k + "！")
 		}
 	}
 	mod.metaFile = modFile

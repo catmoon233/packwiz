@@ -11,12 +11,12 @@ import (
 func PromptYesNo(prompt string) bool {
 	fmt.Print(prompt)
 	if viper.GetBool("non-interactive") {
-		fmt.Println("Y (non-interactive mode)")
+		fmt.Println("Y（非交互模式）")
 		return true
 	}
 	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
-		fmt.Printf("Failed to prompt user: %v\n", err)
+		fmt.Printf("提示用户失败：%v\n", err)
 		os.Exit(1)
 	}
 

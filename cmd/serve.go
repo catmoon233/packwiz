@@ -27,8 +27,8 @@ var indexPage string
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:     "serve",
-	Short:   "Run a local development server",
-	Long:    `Run a local HTTP server for development, automatically refreshing the index when it is queried`,
+	Short:   "运行本地开发服务器",
+	Long:    `运行本地 HTTP 服务器用于开发，在查询索引时自动刷新`,
 	Aliases: []string{"server"},
 	Args:    cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -37,7 +37,7 @@ var serveCmd = &cobra.Command{
 		if viper.GetBool("serve.basic") {
 			http.Handle("/", http.FileServer(http.Dir(".")))
 		} else {
-			fmt.Println("Loading modpack...")
+			fmt.Println("正在加载模组包...")
 			pack, err := core.LoadPack()
 			if err != nil {
 				fmt.Println(err)
@@ -65,7 +65,7 @@ var serveCmd = &cobra.Command{
 
 			// Force-disable no-internal-hashes mode (equiv to --build flag in refresh) for serving over HTTP
 			if viper.GetBool("no-internal-hashes") {
-				fmt.Println("Note: no-internal-hashes mode is set; still writing hashes for use with packwiz-installer - run packwiz refresh to remove them.")
+				fmt.Println("注意：已设置 no-internal-hashes 模式；仍为 packwiz-installer 写入哈希值 - 运行 packwiz refresh 以删除它们。")
 				viper.Set("no-internal-hashes", false)
 			}
 
@@ -84,7 +84,7 @@ var serveCmd = &cobra.Command{
 				// Relative to index.toml ("pack root")
 				indexRelPath, err := index.RelIndexPath(destPath)
 				if err != nil {
-					fmt.Println("Failed to parse path", err)
+					fmt.Println("解析路径失败", err)
 					return
 				}
 
@@ -98,7 +98,7 @@ var serveCmd = &cobra.Command{
 						// Reload pack and index (might have changed on disk)
 						err = doServeRefresh(&pack, &index)
 						if err != nil {
-							fmt.Println("Failed to refresh pack", err)
+							fmt.Println("刷新模组包失败", err)
 							return
 						}
 
@@ -110,7 +110,7 @@ var serveCmd = &cobra.Command{
 					refreshMutex.RLock()
 					// Only allow indexed files
 					if _, found := index.Files[indexRelPath]; !found {
-						fmt.Printf("File not found: %s\n", destPath)
+						fmt.Printf("文件未找到：%s\n", destPath)
 						refreshMutex.RUnlock()
 						w.WriteHeader(404)
 						_, _ = w.Write([]byte("File not found"))
@@ -121,7 +121,7 @@ var serveCmd = &cobra.Command{
 
 				f, err := os.Open(destPath)
 				if err != nil {
-					fmt.Printf("Error reading file \"%s\": %s\n", destPath, err)
+					fmt.Printf("读取文件 \"%s\" 时出错：%s\n", destPath, err)
 					w.WriteHeader(404)
 					_, _ = w.Write([]byte("File not found"))
 					return
@@ -132,7 +132,7 @@ var serveCmd = &cobra.Command{
 					err = err2
 				}
 				if err != nil {
-					fmt.Printf("Error reading file \"%s\": %s\n", destPath, err)
+					fmt.Printf("读取文件 \"%s\" 时出错：%s\n", destPath, err)
 					w.WriteHeader(500)
 					_, _ = w.Write([]byte("Failed to read file"))
 					return
@@ -140,10 +140,10 @@ var serveCmd = &cobra.Command{
 			})
 		}
 
-		fmt.Println("Running on port " + port)
+		fmt.Println("运行在端口 " + port)
 		err := http.ListenAndServe(":"+port, nil)
 		if err != nil {
-			fmt.Printf("Error running server: %s\n", err)
+			fmt.Printf("运行服务器时出错：%s\n", err)
 			os.Exit(1)
 		}
 	},
@@ -175,7 +175,7 @@ func doServeRefresh(pack *core.Pack, index *core.Index) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Index refreshed!")
+	fmt.Println("索引已刷新！")
 
 	return nil
 }
@@ -183,10 +183,10 @@ func doServeRefresh(pack *core.Pack, index *core.Index) error {
 func init() {
 	rootCmd.AddCommand(serveCmd)
 
-	serveCmd.Flags().IntP("port", "p", 8080, "The port to run the server on")
+	serveCmd.Flags().IntP("port", "p", 8080, "运行服务器的端口")
 	_ = viper.BindPFlag("serve.port", serveCmd.Flags().Lookup("port"))
-	serveCmd.Flags().BoolP("refresh", "r", true, "Automatically refresh the index file")
+	serveCmd.Flags().BoolP("refresh", "r", true, "自动刷新索引文件")
 	_ = viper.BindPFlag("serve.refresh", serveCmd.Flags().Lookup("refresh"))
-	serveCmd.Flags().Bool("basic", false, "Disable refreshing and allow all files in the directory, rather than just files listed in the index")
+	serveCmd.Flags().Bool("basic", false, "禁用刷新并允许目录中的所有文件，而不仅仅是索引中列出的文件")
 	_ = viper.BindPFlag("serve.basic", serveCmd.Flags().Lookup("basic"))
 }

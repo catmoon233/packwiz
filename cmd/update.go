@@ -13,14 +13,14 @@ import (
 // UpdateCmd represents the update command
 var UpdateCmd = &cobra.Command{
 	Use:     "update [name]",
-	Short:   "Update an external file (or all external files) in the modpack",
+	Short:   "更新模组包中的外部文件（或所有外部文件）",
 	Aliases: []string{"upgrade"},
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: --check flag?
 		// TODO: specify multiple files to update at once?
 
-		fmt.Println("Loading modpack...")
+		fmt.Println("正在加载模组包...")
 		pack, err := core.LoadPack()
 		if err != nil {
 			fmt.Println(err)
@@ -35,10 +35,10 @@ var UpdateCmd = &cobra.Command{
 		var singleUpdatedName string
 		if viper.GetBool("update.all") {
 			filesWithUpdater := make(map[string][]*core.Mod)
-			fmt.Println("Reading metadata files...")
+			fmt.Println("正在读取元数据文件...")
 			mods, err := index.LoadAllMods()
 			if err != nil {
-				fmt.Printf("Failed to update all files: %v\n", err)
+				fmt.Printf("更新所有文件失败：%v\n", err)
 				os.Exit(1)
 			}
 			for _, modData := range mods {
@@ -56,11 +56,11 @@ var UpdateCmd = &cobra.Command{
 					filesWithUpdater[k] = append(slice, modData)
 				}
 				if !updaterFound {
-					fmt.Printf("A supported update system for \"%s\" cannot be found.\n", modData.Name)
+					fmt.Printf("找不到 \"%s\" 的支持更新系统。\n", modData.Name)
 				}
 			}
 
-			fmt.Println("Checking for updates...")
+			fmt.Println("正在检查更新...")
 			updatesFound := false
 			updatableFiles := make(map[string][]*core.Mod)
 			updaterCachedStateMap := make(map[string][]interface{})
@@ -68,23 +68,23 @@ var UpdateCmd = &cobra.Command{
 				checks, err := core.Updaters[k].CheckUpdate(v, pack)
 				if err != nil {
 					// TODO: do we return err code 1?
-					fmt.Printf("Failed to check updates for %s: %s\n", k, err.Error())
+					fmt.Printf("检查 %s 的更新时失败：%s\n", k, err.Error())
 					continue
 				}
 				for i, check := range checks {
 					if check.Error != nil {
 						// TODO: do we return err code 1?
-						fmt.Printf("Failed to check updates for %s: %s\n", v[i].Name, check.Error.Error())
+						fmt.Printf("检查 %s 的更新时失败：%s\n", v[i].Name, check.Error.Error())
 						continue
 					}
 					if check.UpdateAvailable {
 						if v[i].Pin {
-							fmt.Printf("Update skipped for pinned mod %s\n", v[i].Name)
+							fmt.Printf("已跳过固定的模组 %s 的更新\n", v[i].Name)
 							continue
 						}
 
 						if !updatesFound {
-							fmt.Println("Updates found:")
+							fmt.Println("发现更新：")
 							updatesFound = true
 						}
 						fmt.Printf("%s: %s\n", v[i].Name, check.UpdateString)
@@ -95,12 +95,12 @@ var UpdateCmd = &cobra.Command{
 			}
 
 			if !updatesFound {
-				fmt.Println("All files are up to date!")
+				fmt.Println("所有文件都是最新的！")
 				return
 			}
 
-			if !cmdshared.PromptYesNo("Do you want to update? [Y/n]: ") {
-				fmt.Println("Cancelled!")
+			if !cmdshared.PromptYesNo("您要更新吗？[Y/n]：") {
+				fmt.Println("已取消！")
 				return
 			}
 
@@ -126,12 +126,12 @@ var UpdateCmd = &cobra.Command{
 			}
 		} else {
 			if len(args) < 1 || len(args[0]) == 0 {
-				fmt.Println("Must specify a valid file, or use the --all flag!")
+				fmt.Println("必须指定有效文件，或使用 --all 标志！")
 				os.Exit(1)
 			}
 			modPath, ok := index.FindMod(args[0])
 			if !ok {
-				fmt.Println("Can't find this file; please ensure you have run packwiz refresh and use the name of the .pw.toml file (defaults to the project slug)")
+				fmt.Println("找不到此文件；请确保您已运行 packwiz refresh 并使用 .pw.toml 文件的名称（默认为项目 slug）")
 				os.Exit(1)
 			}
 			modData, err := core.LoadMod(modPath)
@@ -140,7 +140,7 @@ var UpdateCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			if modData.Pin {
-				fmt.Println("Version is pinned; run the unpin command to allow updating")
+				fmt.Println("版本已固定；运行 unpin 命令以允许更新")
 				os.Exit(1)
 			}
 			singleUpdatedName = modData.Name
@@ -158,12 +158,12 @@ var UpdateCmd = &cobra.Command{
 					os.Exit(1)
 				}
 				if len(check) != 1 {
-					fmt.Println("Invalid update check response")
+					fmt.Println("无效的更新检查响应")
 					os.Exit(1)
 				}
 
 				if check[0].UpdateAvailable {
-					fmt.Printf("Update available: %s\n", check[0].UpdateString)
+					fmt.Printf("可用更新：%s\n", check[0].UpdateString)
 
 					err = updater.DoUpdate([]*core.Mod{&modData}, []interface{}{check[0].CachedState})
 					if err != nil {
@@ -182,7 +182,7 @@ var UpdateCmd = &cobra.Command{
 						os.Exit(1)
 					}
 				} else {
-					fmt.Printf("\"%s\" is already up to date!\n", modData.Name)
+					fmt.Printf("\"%s\" 已经是最新版本！\n", modData.Name)
 					return
 				}
 
@@ -190,7 +190,7 @@ var UpdateCmd = &cobra.Command{
 			}
 			if !updaterFound {
 				// TODO: use file name instead of Name when len(Name) == 0 in all places?
-				fmt.Println("A supported update system for \"" + modData.Name + "\" cannot be found.")
+				fmt.Println("找不到 \"" + modData.Name + "\" 的支持更新系统。")
 				os.Exit(1)
 			}
 		}
@@ -211,9 +211,9 @@ var UpdateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		if viper.GetBool("update.all") {
-			fmt.Println("Files updated!")
+			fmt.Println("文件已更新！")
 		} else {
-			fmt.Printf("\"%s\" updated!\n", singleUpdatedName)
+			fmt.Printf("\"%s\" 已更新！\n", singleUpdatedName)
 		}
 	},
 }
@@ -221,6 +221,6 @@ var UpdateCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(UpdateCmd)
 
-	UpdateCmd.Flags().BoolP("all", "a", false, "Update all external files")
+	UpdateCmd.Flags().BoolP("all", "a", false, "更新所有外部文件")
 	_ = viper.BindPFlag("update.all", UpdateCmd.Flags().Lookup("all"))
 }

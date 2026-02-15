@@ -30,7 +30,7 @@ func GetHashImpl(hashType string) (HashStringer, error) {
 	case "length-bytes": // TODO: only used internally for now; should not be saved
 		return number64Stringer{&LengthHasher{}}, nil
 	}
-	return nil, fmt.Errorf("hash implementation %s not found", hashType)
+	return nil, fmt.Errorf("未找到哈希实现 %s", hashType)
 }
 
 var preferredHashList = []string{

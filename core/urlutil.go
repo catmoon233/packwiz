@@ -14,7 +14,7 @@ func ReencodeURL(u string) (string, error) {
 	u = strings.ReplaceAll(u, "]", "%5D")
 	parsed, err := url.Parse(u)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse url: %s, %v", u, err)
+		return "", fmt.Errorf("解析 URL 失败：%s, %v", u, err)
 	}
 	return parsed.String(), nil
 }

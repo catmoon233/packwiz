@@ -9,7 +9,7 @@ import (
 )
 
 func pinMod(args []string, pinned bool) {
-	fmt.Println("Loading modpack...")
+	fmt.Println("正在加载模组包...")
 	pack, err := core.LoadPack()
 	if err != nil {
 		fmt.Println(err)
@@ -22,7 +22,7 @@ func pinMod(args []string, pinned bool) {
 	}
 	modPath, ok := index.FindMod(args[0])
 	if !ok {
-		fmt.Println("Can't find this file; please ensure you have run packwiz refresh and use the name of the .pw.toml file (defaults to the project slug)")
+		fmt.Println("找不到此文件；请确保您已运行 packwiz refresh 并使用 .pw.toml 文件的名称（默认为项目 slug）")
 		os.Exit(1)
 	}
 	modData, err := core.LoadMod(modPath)
@@ -57,9 +57,9 @@ func pinMod(args []string, pinned bool) {
 		os.Exit(1)
 	}
 
-	message := "pinned"
+	message := "已固定"
 	if !pinned {
-		message = "unpinned"
+		message = "已取消固定"
 	}
 	fmt.Printf("%s %s successfully!\n", args[0], message)
 }
@@ -67,7 +67,7 @@ func pinMod(args []string, pinned bool) {
 // pinCmd represents the pin command
 var pinCmd = &cobra.Command{
 	Use:     "pin",
-	Short:   "Pin a file so it does not get updated automatically",
+	Short:   "固定文件以防止自动更新",
 	Aliases: []string{"hold"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -78,7 +78,7 @@ var pinCmd = &cobra.Command{
 // unpinCmd represents the unpin command
 var unpinCmd = &cobra.Command{
 	Use:     "unpin",
-	Short:   "Unpin a file so it receives updates",
+	Short:   "取消文件固定以接收更新",
 	Aliases: []string{"unhold"},
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

@@ -12,10 +12,10 @@ import (
 // refreshCmd represents the refresh command
 var refreshCmd = &cobra.Command{
 	Use:   "refresh",
-	Short: "Refresh the index file",
+	Short: "刷新索引文件",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Loading modpack...")
+		fmt.Println("正在加载模组包...")
 		pack, err := core.LoadPack()
 		if err != nil {
 			fmt.Println(err)
@@ -25,7 +25,7 @@ var refreshCmd = &cobra.Command{
 		if err == nil && build {
 			viper.Set("no-internal-hashes", false)
 		} else if viper.GetBool("no-internal-hashes") {
-			fmt.Println("Note: no-internal-hashes mode is set, no hashes will be saved. Use --build to override this for distribution.")
+			fmt.Println("注意：已设置 no-internal-hashes 模式，不会保存哈希值。使用 --build 覆盖此设置以用于分发。")
 		}
 		index, err := pack.LoadIndex()
 		if err != nil {
@@ -52,12 +52,12 @@ var refreshCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Println("Index refreshed!")
+		fmt.Println("索引已刷新！")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(refreshCmd)
 
-	refreshCmd.Flags().Bool("build", false, "Only has an effect in no-internal-hashes mode: generates internal hashes for distribution with packwiz-installer")
+	refreshCmd.Flags().Bool("build", false, "仅在 no-internal-hashes 模式下有效：生成内部哈希值以供 packwiz-installer 分发")
 }

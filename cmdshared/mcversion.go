@@ -29,7 +29,7 @@ func (m McVersionManifest) CheckValid(version string) {
 			return
 		}
 	}
-	fmt.Println("Given version is not a valid Minecraft version!")
+	fmt.Println("指定的版本不是有效的 Minecraft 版本！")
 	os.Exit(1)
 }
 

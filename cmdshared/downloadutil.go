@@ -13,7 +13,7 @@ import (
 func ListManualDownloads(session core.DownloadSession) {
 	manualDownloads := session.GetManualDownloads()
 	if len(manualDownloads) > 0 {
-		fmt.Printf("Found %v manual downloads; these mods are unable to be downloaded by packwiz (due to API limitations) and must be manually downloaded:\n",
+		fmt.Printf("发现 %v 个手动下载；这些模组无法由 packwiz 下载（由于 API 限制），必须手动下载：\n",
 			len(manualDownloads))
 		for _, dl := range manualDownloads {
 			fmt.Printf("%s (%s) from %s\n", dl.Name, dl.FileName, dl.URL)
@@ -24,7 +24,7 @@ func ListManualDownloads(session core.DownloadSession) {
 			os.Exit(1)
 		}
 
-		fmt.Printf("Once you have done so, place these files in %s and re-run this command.\n",
+		fmt.Printf("完成后，将这些文件放在 %s 中并重新运行此命令。\n",
 			filepath.Join(cacheDir, core.DownloadCacheImportFolder))
 		os.Exit(1)
 	}
@@ -32,35 +32,35 @@ func ListManualDownloads(session core.DownloadSession) {
 
 func AddToZip(dl core.CompletedDownload, exp *zip.Writer, dir string, index *core.Index) bool {
 	if dl.Error != nil {
-		fmt.Printf("Download of %s (%s) failed: %v\n", dl.Mod.Name, dl.Mod.FileName, dl.Error)
+		fmt.Printf("下载 %s (%s) 失败：%v\n", dl.Mod.Name, dl.Mod.FileName, dl.Error)
 		return false
 	}
 	for _, warning := range dl.Warnings {
-		fmt.Printf("Warning for %s (%s): %v\n", dl.Mod.Name, dl.Mod.FileName, warning)
+		fmt.Printf("%s (%s) 的警告：%v\n", dl.Mod.Name, dl.Mod.FileName, warning)
 	}
 
 	p, err := index.RelIndexPath(dl.Mod.GetDestFilePath())
 	if err != nil {
-		fmt.Printf("Error resolving external file: %v\n", err)
+		fmt.Printf("解析外部文件时出错：%v\n", err)
 		return false
 	}
 	modFile, err := exp.Create(path.Join(dir, p))
 	if err != nil {
-		fmt.Printf("Error creating metadata file %s: %v\n", p, err)
+		fmt.Printf("创建元数据文件 %s 时出错：%v\n", p, err)
 		return false
 	}
 	_, err = io.Copy(modFile, dl.File)
 	if err != nil {
-		fmt.Printf("Error copying file %s: %v\n", p, err)
+		fmt.Printf("复制文件 %s 时出错：%v\n", p, err)
 		return false
 	}
 	err = dl.File.Close()
 	if err != nil {
-		fmt.Printf("Error closing file %s: %v\n", p, err)
+		fmt.Printf("关闭文件 %s 时出错：%v\n", p, err)
 		return false
 	}
 
-	fmt.Printf("%s (%s) added to zip\n", dl.Mod.Name, dl.Mod.FileName)
+	fmt.Printf("%s (%s) 已添加到 zip\n", dl.Mod.Name, dl.Mod.FileName)
 	return true
 }
 
@@ -70,7 +70,7 @@ func AddNonMetafileOverrides(index *core.Index, exp *zip.Writer) {
 		if !v.IsMetaFile() {
 			file, err := exp.Create(path.Join("overrides", p))
 			if err != nil {
-				fmt.Printf("Error creating file: %s\n", err.Error())
+				fmt.Printf("创建文件时出错：%s\n", err.Error())
 				// TODO: exit(1)?
 				continue
 			}
@@ -78,14 +78,14 @@ func AddNonMetafileOverrides(index *core.Index, exp *zip.Writer) {
 			src, err := os.Open(index.ResolveIndexPath(p))
 			if err != nil {
 				_ = src.Close()
-				fmt.Printf("Error reading file: %s\n", err.Error())
+				fmt.Printf("读取文件时出错：%s\n", err.Error())
 				// TODO: exit(1)?
 				continue
 			}
 			_, err = io.Copy(file, src)
 			if err != nil {
 				_ = src.Close()
-				fmt.Printf("Error copying file: %s\n", err.Error())
+				fmt.Printf("复制文件时出错：%s\n", err.Error())
 				// TODO: exit(1)?
 				continue
 			}
@@ -96,12 +96,12 @@ func AddNonMetafileOverrides(index *core.Index, exp *zip.Writer) {
 }
 
 func PrintDisclaimer(isCf bool) {
-	fmt.Println("Disclaimer: you are responsible for ensuring you comply with ALL the licenses, or obtain appropriate permissions, for the files \"added to zip\" below")
+	fmt.Println("免责声明：您有责任确保您遵守所有许可证或获得适当的许可，用于以下\"添加到 zip\"的文件")
 	if isCf {
-		fmt.Println("Note that mods bundled within a CurseForge pack must be in the Approved Non-CurseForge Mods list")
-		fmt.Println("packwiz is currently unable to match metadata between mod sites - if any of these are available from CurseForge you should change them to use CurseForge metadata (e.g. by re-adding them using the cf commands)")
+		fmt.Println("注意，CurseForge 模组包中捆绑的模组必须在批准的非 CurseForge 模组列表中")
+		fmt.Println("packwiz 目前无法在模组站点之间匹配元数据 - 如果其中任何一个可以从 CurseForge 获得，您应该更改它们以使用 CurseForge 元数据（例如，通过使用 cf 命令重新添加它们）")
 	} else {
-		fmt.Println("packwiz is currently unable to match metadata between mod sites - if any of these are available from Modrinth you should change them to use Modrinth metadata (e.g. by re-adding them using the mr commands)")
+		fmt.Println("packwiz 目前无法在模组站点之间匹配元数据 - 如果其中任何一个可以从 Modrinth 获得，您应该更改它们以使用 Modrinth 元数据（例如，通过使用 mr 命令重新添加它们）")
 	}
 	fmt.Println()
 }

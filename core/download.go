@@ -83,7 +83,7 @@ func (d *downloadSessionInternal) StartDownloads() chan CompletedDownload {
 					// Remove handle and try again
 					cacheHandle.Remove()
 					cacheHandle = nil
-					warnings = append(warnings, fmt.Errorf("redownloading cached file: %w", err))
+					warnings = append(warnings, fmt.Errorf("重新下载缓存文件：%w", err))
 				} else {
 					downloads <- download
 					continue
@@ -109,11 +109,11 @@ func (d *downloadSessionInternal) StartDownloads() chan CompletedDownload {
 func (d *downloadSessionInternal) SaveIndex() error {
 	data, err := json.Marshal(d.cacheIndex)
 	if err != nil {
-		return fmt.Errorf("failed to serialise index: %w", err)
+		return fmt.Errorf("索引序列化失败：%w", err)
 	}
 	err = os.WriteFile(filepath.Join(d.cacheFolder, "index.json"), data, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to write index: %w", err)
+		return fmt.Errorf("索引写入失败：%w", err)
 	}
 	return nil
 }
@@ -128,12 +128,12 @@ func reuseExistingFile(cacheHandle *CacheIndexHandle, hashesToObtain []string, m
 			err = teeHashes(remainingHashes, cacheHandle.Hashes, io.Discard, file)
 			if err != nil {
 				_ = file.Close()
-				return CompletedDownload{}, fmt.Errorf("failed to read hashes of file %s from cache: %w", cacheHandle.Path(), err)
+				return CompletedDownload{}, fmt.Errorf("从缓存读取文件 %s 的哈希失败：%w", cacheHandle.Path(), err)
 			}
 			_, err := file.Seek(0, 0)
 			if err != nil {
 				_ = file.Close()
-				return CompletedDownload{}, fmt.Errorf("failed to seek file %s in cache: %w", cacheHandle.Path(), err)
+				return CompletedDownload{}, fmt.Errorf("在缓存中定位文件 %s 失败：%w", cacheHandle.Path(), err)
 			}
 			warnings = cacheHandle.UpdateIndex()
 		}
@@ -145,7 +145,7 @@ func reuseExistingFile(cacheHandle *CacheIndexHandle, hashesToObtain []string, m
 			Warnings: warnings,
 		}, nil
 	} else {
-		return CompletedDownload{}, fmt.Errorf("failed to read file %s from cache: %w", cacheHandle.Path(), err)
+		return CompletedDownload{}, fmt.Errorf("从缓存读取文件 %s 失败：%w", cacheHandle.Path(), err)
 	}
 }
 
@@ -153,7 +153,7 @@ func downloadNewFile(task *downloadTask, cacheFolder string, hashesToObtain []st
 	// Create temp file to download to
 	tempFile, err := os.CreateTemp(filepath.Join(cacheFolder, "temp"), "download-tmp")
 	if err != nil {
-		return CompletedDownload{}, fmt.Errorf("failed to create temporary file for download: %w", err)
+		return CompletedDownload{}, fmt.Errorf("为下载创建临时文件失败：%w", err)
 	}
 
 	hashesToObtain, hashes := getHashListsForDownload(hashesToObtain, task.hashFormat, task.hash)
@@ -161,11 +161,11 @@ func downloadNewFile(task *downloadTask, cacheFolder string, hashesToObtain []st
 	if task.url != "" {
 		resp, err := GetWithUA(task.url, "application/octet-stream")
 		if err != nil {
-			return CompletedDownload{}, fmt.Errorf("failed to download %s: %w", task.url, err)
+			return CompletedDownload{}, fmt.Errorf("下载 %s 失败：%w", task.url, err)
 		}
 		if resp.StatusCode != 200 {
 			_ = resp.Body.Close()
-			return CompletedDownload{}, fmt.Errorf("failed to download %s: invalid status code %v", task.url, resp.StatusCode)
+			return CompletedDownload{}, fmt.Errorf("下载 %s 失败：无效状态码 %v", task.url, resp.StatusCode)
 		}
 		data = resp.Body
 	} else {
@@ -178,7 +178,7 @@ func downloadNewFile(task *downloadTask, cacheFolder string, hashesToObtain []st
 	err = teeHashes(hashesToObtain, hashes, tempFile, data)
 	_ = data.Close()
 	if err != nil {
-		return CompletedDownload{}, fmt.Errorf("failed to download: %w", err)
+		return CompletedDownload{}, fmt.Errorf("下载失败：%w", err)
 	}
 
 	// Create handle with calculated hashes
@@ -190,18 +190,18 @@ func downloadNewFile(task *downloadTask, cacheFolder string, hashesToObtain []st
 	if alreadyExists {
 		err = tempFile.Close()
 		if err != nil {
-			return CompletedDownload{}, fmt.Errorf("failed to close temporary file %s: %w", tempFile.Name(), err)
+			return CompletedDownload{}, fmt.Errorf("关闭临时文件 %s 失败：%w", tempFile.Name(), err)
 		}
 		file, err = cacheHandle.Open()
 		if err != nil {
-			return CompletedDownload{}, fmt.Errorf("failed to read file %s from cache: %w", cacheHandle.Path(), err)
+			return CompletedDownload{}, fmt.Errorf("从缓存读取文件 %s 失败：%w", cacheHandle.Path(), err)
 		}
 	} else {
 		// Automatically closes tempFile
 		file, err = cacheHandle.CreateFromTemp(tempFile)
 		if err != nil {
 			_ = tempFile.Close()
-			return CompletedDownload{}, fmt.Errorf("failed to move file %s to cache: %w", cacheHandle.Path(), err)
+			return CompletedDownload{}, fmt.Errorf("将文件 %s 移动到缓存失败：%w", cacheHandle.Path(), err)
 		}
 	}
 
@@ -246,20 +246,20 @@ func teeHashes(hashesToObtain []string, hashes map[string]string,
 	// Select the best hash from the hashes map to validate against
 	validateHashFormat, validateHash := selectPreferredHash(hashes)
 	if validateHashFormat == "" {
-		return errors.New("failed to find preferred hash for file")
+		return errors.New("无法找到文件的首选哈希")
 	}
 
 	// Create writers for all the hashers
 	mainHasher, err := GetHashImpl(validateHashFormat)
 	if err != nil {
-		return fmt.Errorf("failed to get hash format %s", validateHashFormat)
+		return fmt.Errorf("获取哈希格式 %s 失败", validateHashFormat)
 	}
 	hashers := make(map[string]HashStringer, len(hashesToObtain))
 	allWriters := make([]io.Writer, len(hashesToObtain))
 	for i, v := range hashesToObtain {
 		hashers[v], err = GetHashImpl(v)
 		if err != nil {
-			return fmt.Errorf("failed to get hash format %s", v)
+			return fmt.Errorf("获取哈希格式 %s 失败", v)
 		}
 		allWriters[i] = hashers[v]
 	}
@@ -269,7 +269,7 @@ func teeHashes(hashesToObtain []string, hashes map[string]string,
 	w := io.MultiWriter(allWriters...)
 	_, err = io.Copy(w, src)
 	if err != nil {
-		return fmt.Errorf("failed to read file: %w", err)
+		return fmt.Errorf("读取文件失败：%w", err)
 	}
 
 	calculatedHash := mainHasher.HashToString(mainHasher.Sum(nil))
@@ -277,7 +277,7 @@ func teeHashes(hashesToObtain []string, hashes map[string]string,
 	// Check if the hash of the downloaded file matches the expected hash
 	if strings.ToLower(calculatedHash) != strings.ToLower(validateHash) {
 		return fmt.Errorf(
-			"%s hash of downloaded file does not match with expected hash!\n download hash: %s\n expected hash: %s\n",
+			"下载文件的 %s 哈希与预期哈希不匹配！\n 下载哈希：%s\n 预期哈希：%s\n",
 			validateHashFormat, calculatedHash, validateHash)
 	}
 
@@ -375,7 +375,7 @@ func (c *CacheIndex) GetHandleFromHashForce(hashFormat string, hash string) (*Ca
 				var err error
 				storedHashFmtList[hashIdx], err = c.rehashFile(c.Hashes[cacheHashFormat][hashIdx], hashFormat)
 				if err != nil {
-					return nil, fmt.Errorf("failed to rehash %s: %w", c.Hashes[cacheHashFormat][hashIdx], err)
+					return nil, fmt.Errorf("重新计算 %s 的哈希失败：%w", c.Hashes[cacheHashFormat][hashIdx], err)
 				}
 				if strings.EqualFold(storedHashFmtList[hashIdx], hash) {
 					return &CacheIndexHandle{
@@ -394,7 +394,7 @@ func (c *CacheIndex) GetHandleFromHashForce(hashFormat string, hash string) (*Ca
 			var err error
 			storedHashFmtList[hashIdx], err = c.rehashFile(cacheHash, hashFormat)
 			if err != nil {
-				return nil, fmt.Errorf("failed to rehash %s: %w", cacheHash, err)
+				return nil, fmt.Errorf("重新计算 %s 的哈希失败：%w", cacheHash, err)
 			}
 			if strings.EqualFold(storedHashFmtList[hashIdx], hash) {
 				return &CacheIndexHandle{
@@ -415,11 +415,11 @@ func (c *CacheIndex) rehashFile(cacheHash string, hashFormat string) (string, er
 	}
 	validateHasher, err := GetHashImpl(cacheHashFormat)
 	if err != nil {
-		return "", fmt.Errorf("failed to get hasher for rehash: %w", err)
+		return "", fmt.Errorf("获取重新哈希的哈希器失败：%w", err)
 	}
 	rehashHasher, err := GetHashImpl(hashFormat)
 	if err != nil {
-		return "", fmt.Errorf("failed to get hasher for rehash: %w", err)
+		return "", fmt.Errorf("获取重新哈希的哈希器失败：%w", err)
 	}
 	writer := io.MultiWriter(validateHasher, rehashHasher)
 	_, err = io.Copy(writer, file)
@@ -439,7 +439,7 @@ func (c *CacheIndex) rehashFile(cacheHash string, hashFormat string) (string, er
 func (c *CacheIndex) NewHandleFromHashes(hashes map[string]string) (*CacheIndexHandle, bool) {
 	// Ensure hashes contains the cache hash format
 	if _, ok := hashes[cacheHashFormat]; !ok {
-		panic("NewHandleFromHashes didn't get any value for " + cacheHashFormat)
+		panic("NewHandleFromHashes 未获取到 " + cacheHashFormat + " 的任何值")
 	}
 	// Only compare with the cache hash format - other hashes might be insecure or likely to collide
 	handle := c.GetHandleFromHash(cacheHashFormat, hashes[cacheHashFormat])
@@ -470,17 +470,17 @@ func (c *CacheIndex) MoveImportFiles() error {
 		file, err := os.Open(path)
 		if err != nil {
 			_ = file.Close()
-			return fmt.Errorf("failed to open imported file %s: %w", path, err)
+			return fmt.Errorf("打开导入文件 %s 失败：%w", path, err)
 		}
 		hasher, err := GetHashImpl(cacheHashFormat)
 		if err != nil {
 			_ = file.Close()
-			return fmt.Errorf("failed to validate imported file %s: %w", path, err)
+			return fmt.Errorf("验证导入文件 %s 失败：%w", path, err)
 		}
 		_, err = io.Copy(hasher, file)
 		if err != nil {
 			_ = file.Close()
-			return fmt.Errorf("failed to validate imported file %s: %w", path, err)
+			return fmt.Errorf("验证导入文件 %s 失败：%w", path, err)
 		}
 		handle, exists := c.NewHandleFromHashes(map[string]string{
 			cacheHashFormat: hasher.HashToString(hasher.Sum(nil)),
@@ -488,11 +488,11 @@ func (c *CacheIndex) MoveImportFiles() error {
 		if exists {
 			err = file.Close()
 			if err != nil {
-				return fmt.Errorf("failed to close imported file %s: %w", path, err)
+				return fmt.Errorf("关闭导入文件 %s 失败：%w", path, err)
 			}
 			err = os.Remove(path)
 			if err != nil {
-				return fmt.Errorf("failed to delete imported file %s: %w", path, err)
+				return fmt.Errorf("删除导入文件 %s 失败：%w", path, err)
 			}
 		} else {
 			newFile, err := handle.CreateFromTemp(file)
@@ -500,11 +500,11 @@ func (c *CacheIndex) MoveImportFiles() error {
 				if newFile != nil {
 					_ = newFile.Close()
 				}
-				return fmt.Errorf("failed to rename imported file %s: %w", path, err)
+				return fmt.Errorf("重命名导入文件 %s 失败：%w", path, err)
 			}
 			err = newFile.Close()
 			if err != nil {
-				return fmt.Errorf("failed to close renamed imported file %s: %w", path, err)
+				return fmt.Errorf("关闭重命名后的导入文件 %s 失败：%w", path, err)
 			}
 			_ = handle.UpdateIndex()
 		}
@@ -613,25 +613,25 @@ func CreateDownloadSession(mods []*Mod, hashesToObtain []string) (DownloadSessio
 	cacheIndex := CacheIndex{Version: cacheLatestVersion, Hashes: make(map[string][]string)}
 	cachePath, err := GetPackwizCache()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load cache: %w", err)
+		return nil, fmt.Errorf("加载缓存失败：%w", err)
 	}
 	err = os.MkdirAll(cachePath, 0755)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cache directory: %w", err)
+		return nil, fmt.Errorf("创建缓存目录失败：%w", err)
 	}
 	err = os.MkdirAll(filepath.Join(cachePath, "temp"), 0755)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cache temp directory: %w", err)
+		return nil, fmt.Errorf("创建缓存临时目录失败：%w", err)
 	}
 	cacheIndexData, err := os.ReadFile(filepath.Join(cachePath, "index.json"))
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return nil, fmt.Errorf("failed to read cache index file: %w", err)
+			return nil, fmt.Errorf("读取缓存索引文件失败：%w", err)
 		}
 	} else {
 		err = json.Unmarshal(cacheIndexData, &cacheIndex)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read cache index file: %w", err)
+			return nil, fmt.Errorf("读取缓存索引文件失败：%w", err)
 		}
 	}
 
@@ -645,7 +645,7 @@ func CreateDownloadSession(mods []*Mod, hashesToObtain []string) (DownloadSessio
 	// Ensure the cache's version is up-to-date
 	cacheIndex.updateVersion()
 	if cacheIndex.Version > cacheLatestVersion {
-		return nil, fmt.Errorf("cache index is too new (version %v)", cacheIndex.Version)
+		return nil, fmt.Errorf("缓存索引版本过高（版本 %v）", cacheIndex.Version)
 	}
 
 	// Clean up empty entries in index
@@ -664,12 +664,12 @@ func CreateDownloadSession(mods []*Mod, hashesToObtain []string) (DownloadSessio
 	// Create import folder
 	err = os.MkdirAll(filepath.Join(cachePath, DownloadCacheImportFolder), 0755)
 	if err != nil {
-		return nil, fmt.Errorf("error creating cache import folder: %w", err)
+		return nil, fmt.Errorf("创建缓存导入文件夹时出错：%w", err)
 	}
 	// Move import files
 	err = cacheIndex.MoveImportFiles()
 	if err != nil {
-		return nil, fmt.Errorf("error updating cache import folder: %w", err)
+		return nil, fmt.Errorf("更新缓存导入文件夹时出错：%w", err)
 	}
 
 	// Create session
@@ -694,30 +694,30 @@ func CreateDownloadSession(mods []*Mod, hashesToObtain []string) (DownloadSessio
 			dlID := strings.TrimPrefix(mod.Download.Mode, "metadata:")
 			pendingMetadata[dlID] = append(pendingMetadata[dlID], mod)
 		} else {
-			return nil, fmt.Errorf("unknown download mode %s for %s", mod.Download.Mode, mod.Name)
+			return nil, fmt.Errorf("%s 的下载模式 %s 未知", mod.Download.Mode, mod.Name)
 		}
 	}
 
 	for dlID, mods := range pendingMetadata {
 		downloader, ok := MetaDownloaders[dlID]
 		if !ok {
-			return nil, fmt.Errorf("unknown download mode %s for %s", mods[0].Download.Mode, mods[0].Name)
+			return nil, fmt.Errorf("%s 的下载模式 %s 未知", mods[0].Download.Mode, mods[0].Name)
 		}
 		meta, err := downloader.GetFilesMetadata(mods)
 		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve %s files: %w", dlID, err)
+			return nil, fmt.Errorf("检索 %s 文件失败：%w", dlID, err)
 		}
 		for i, v := range mods {
 			isManual, manualDownload := meta[i].GetManualDownload()
 			if isManual {
 				handle, err := cacheIndex.GetHandleFromHashForce(v.Download.HashFormat, v.Download.Hash)
 				if err != nil {
-					return nil, fmt.Errorf("failed to lookup manual download %s: %w", v.Name, err)
+					return nil, fmt.Errorf("查找手动下载 %s 失败：%w", v.Name, err)
 				}
 				if handle != nil {
 					file, err := handle.Open()
 					if err != nil {
-						return nil, fmt.Errorf("failed to open manual download %s: %w", v.Name, err)
+						return nil, fmt.Errorf("打开手动下载 %s 失败：%w", v.Name, err)
 					}
 					downloadSession.foundManualDownloads = append(downloadSession.foundManualDownloads, CompletedDownload{
 						File:   file,
@@ -743,7 +743,7 @@ func CreateDownloadSession(mods []*Mod, hashesToObtain []string) (DownloadSessio
 	// Save index after importing and Force index updates
 	err = downloadSession.SaveIndex()
 	if err != nil {
-		return nil, fmt.Errorf("error writing cache index: %w", err)
+		return nil, fmt.Errorf("写入缓存索引时出错：%w", err)
 	}
 
 	return &downloadSession, nil
