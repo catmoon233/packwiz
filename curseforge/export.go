@@ -17,16 +17,16 @@ import (
 // exportCmd represents the export command
 var exportCmd = &cobra.Command{
 	Use:   "export",
-	Short: "Export the current modpack into a .zip for curseforge",
+	Short: "将当前模组包导出为.curseforge的.zip文件",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		side := viper.GetString("curseforge.export.side")
 		if side != core.UniversalSide && side != core.ServerSide && side != core.ClientSide {
-			fmt.Printf("Invalid side %q, must be one of client, server, or both (default)\n", side)
+			fmt.Printf("无效的side %q，必须是client、server或both（默认）之一\n", side)
 			os.Exit(1)
 		}
 
-		fmt.Println("Loading modpack...")
+		fmt.Println("正在加载模组包...")
 		pack, err := core.LoadPack()
 		if err != nil {
 			fmt.Println(err)
@@ -59,10 +59,10 @@ var exportCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Println("Reading external files...")
+		fmt.Println("正在读取外部文件...")
 		mods, err := index.LoadAllMods()
 		if err != nil {
-			fmt.Printf("Error reading file: %v\n", err)
+			fmt.Printf("读取文件时出错：%v\n", err)
 			os.Exit(1)
 		}
 		i := 0
@@ -81,7 +81,7 @@ var exportCmd = &cobra.Command{
 		if ok {
 			exportData, err = parseExportData(exportDataUnparsed)
 			if err != nil {
-				fmt.Printf("Failed to parse export metadata: %s\n", err.Error())
+				fmt.Printf("解析导出元数据失败：%s\n", err.Error())
 				os.Exit(1)
 			}
 		}
@@ -93,7 +93,7 @@ var exportCmd = &cobra.Command{
 
 		expFile, err := os.Create(fileName)
 		if err != nil {
-			fmt.Printf("Failed to create zip: %s\n", err.Error())
+			fmt.Printf("创建zip失败：%s\n", err.Error())
 			os.Exit(1)
 		}
 		exp := zip.NewWriter(expFile)
@@ -101,7 +101,7 @@ var exportCmd = &cobra.Command{
 		// Add an overrides folder even if there are no files to go in it
 		_, err = exp.Create("overrides/")
 		if err != nil {
-			fmt.Printf("Failed to add overrides folder: %s\n", err.Error())
+			fmt.Printf("添加overrides文件夹失败：%s\n", err.Error())
 			os.Exit(1)
 		}
 
@@ -124,12 +124,12 @@ var exportCmd = &cobra.Command{
 
 		// Download external files and save directly into the zip
 		if len(nonCfMods) > 0 {
-			fmt.Printf("Retrieving %v external files to store in the modpack zip...\n", len(nonCfMods))
+			fmt.Printf("正在检索 %v 个外部文件以存储在模组包zip中...\n", len(nonCfMods))
 			cmdshared.PrintDisclaimer(true)
 
 			session, err := core.CreateDownloadSession(nonCfMods, []string{})
 			if err != nil {
-				fmt.Printf("Error retrieving external files: %v\n", err)
+				fmt.Printf("检索外部文件时出错：%v\n", err)
 				os.Exit(1)
 			}
 
@@ -141,7 +141,7 @@ var exportCmd = &cobra.Command{
 
 			err = session.SaveIndex()
 			if err != nil {
-				fmt.Printf("Error saving cache index: %v\n", err)
+				fmt.Printf("保存缓存索引时出错：%v\n", err)
 				os.Exit(1)
 			}
 		}
@@ -150,7 +150,7 @@ var exportCmd = &cobra.Command{
 		if err != nil {
 			_ = exp.Close()
 			_ = expFile.Close()
-			fmt.Println("Error creating manifest: " + err.Error())
+			fmt.Println("创建清单时出错：" + err.Error())
 			os.Exit(1)
 		}
 
@@ -158,7 +158,7 @@ var exportCmd = &cobra.Command{
 		if err != nil {
 			_ = exp.Close()
 			_ = expFile.Close()
-			fmt.Println("Error writing manifest: " + err.Error())
+			fmt.Println("写入清单时出错：" + err.Error())
 			os.Exit(1)
 		}
 
@@ -166,7 +166,7 @@ var exportCmd = &cobra.Command{
 		if err != nil {
 			_ = exp.Close()
 			_ = expFile.Close()
-			fmt.Println("Error creating mod list: " + err.Error())
+			fmt.Println("创建模组列表时出错：" + err.Error())
 			os.Exit(1)
 		}
 
@@ -174,16 +174,16 @@ var exportCmd = &cobra.Command{
 
 		err = exp.Close()
 		if err != nil {
-			fmt.Println("Error writing export file: " + err.Error())
+			fmt.Println("写入导出文件时出错：" + err.Error())
 			os.Exit(1)
 		}
 		err = expFile.Close()
 		if err != nil {
-			fmt.Println("Error writing export file: " + err.Error())
+			fmt.Println("写入导出文件时出错：" + err.Error())
 			os.Exit(1)
 		}
 
-		fmt.Println("Modpack exported to " + fileName)
+		fmt.Println("模组包已导出到 " + fileName)
 	},
 }
 
@@ -226,8 +226,8 @@ func createModlist(zw *zip.Writer, mods []*core.Mod) error {
 func init() {
 	curseforgeCmd.AddCommand(exportCmd)
 
-	exportCmd.Flags().StringP("side", "s", "client", "The side to export mods with")
+	exportCmd.Flags().StringP("side", "s", "client", "导出模组所使用的端")
 	_ = viper.BindPFlag("curseforge.export.side", exportCmd.Flags().Lookup("side"))
-	exportCmd.Flags().StringP("output", "o", "", "The file to export the modpack to")
+	exportCmd.Flags().StringP("output", "o", "", "将模组包导出到哪个文件")
 	_ = viper.BindPFlag("curseforge.export.output", exportCmd.Flags().Lookup("output"))
 }

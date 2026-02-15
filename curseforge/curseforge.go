@@ -395,7 +395,7 @@ func (u cfUpdater) CheckUpdate(mods []*core.Mod, pack core.Pack) ([]core.UpdateC
 	for i, v := range mods {
 		projectRaw, ok := v.GetParsedUpdateData("curseforge")
 		if !ok {
-			results[i] = core.UpdateCheck{Error: errors.New("failed to parse update metadata")}
+			results[i] = core.UpdateCheck{Error: errors.New("解析更新元数据失败")}
 			continue
 		}
 		project := projectRaw.(cfUpdateData)
@@ -420,7 +420,7 @@ func (u cfUpdater) CheckUpdate(mods []*core.Mod, pack core.Pack) ([]core.UpdateC
 	for i, v := range mods {
 		projectRaw, ok := v.GetParsedUpdateData("curseforge")
 		if !ok {
-			results[i] = core.UpdateCheck{Error: errors.New("failed to parse update metadata")}
+			results[i] = core.UpdateCheck{Error: errors.New("解析更新元数据失败")}
 			continue
 		}
 		project := projectRaw.(cfUpdateData)
@@ -443,7 +443,7 @@ func (u cfUpdater) CheckUpdate(mods []*core.Mod, pack core.Pack) ([]core.UpdateC
 }
 
 func (u cfUpdater) DoUpdate(mods []*core.Mod, cachedState []interface{}) error {
-	// "Do" isn't really that accurate, more like "Apply", because all the work is done in CheckUpdate!
+	// "Do"不太准确，更像"Apply"，因为所有工作都在CheckUpdate中完成！
 	for i, v := range mods {
 		modState := cachedState[i].(cachedStateStore)
 
@@ -505,7 +505,7 @@ func (c cfDownloader) GetFilesMetadata(mods []*core.Mod) ([]core.MetaDownloaderD
 	for i, v := range mods {
 		updateData, ok := v.GetParsedUpdateData("curseforge")
 		if !ok {
-			return nil, fmt.Errorf("failed to read CurseForge update metadata from %s", v.Name)
+			return nil, fmt.Errorf("无法从 %s 读取CurseForge更新元数据", v.Name)
 		}
 		project := updateData.(cfUpdateData)
 		indexMap[project.ProjectID] = append(indexMap[project.ProjectID], i)
@@ -515,14 +515,14 @@ func (c cfDownloader) GetFilesMetadata(mods []*core.Mod) ([]core.MetaDownloaderD
 
 	fileData, err := cfDefaultClient.getFileInfoMultiple(fileIDs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get CurseForge file metadata: %w", err)
+		return nil, fmt.Errorf("获取CurseForge文件元数据失败：%w", err)
 	}
 
 	modIDsToLookup := make([]uint32, 0)
 	fileNames := make(map[uint32]string)
 	for _, file := range fileData {
 		if _, ok := indexMap[file.ModID]; !ok {
-			return nil, fmt.Errorf("unknown project ID in response: %v (file %v, name %v)", file.ModID, file.ID, file.FileName)
+			return nil, fmt.Errorf("响应中的未知项目ID：%v（文件 %v，名称 %v）", file.ModID, file.ID, file.FileName)
 		}
 		// Opted-out mods don't provide their download URLs
 		if file.DownloadURL == "" {
@@ -540,11 +540,11 @@ func (c cfDownloader) GetFilesMetadata(mods []*core.Mod) ([]core.MetaDownloaderD
 	if len(modIDsToLookup) > 0 {
 		modData, err := cfDefaultClient.getModInfoMultiple(modIDsToLookup)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get CurseForge project metadata: %w", err)
+			return nil, fmt.Errorf("获取CurseForge项目元数据失败：%w", err)
 		}
 		for _, mod := range modData {
-			if _, ok := indexMap[mod.ID]; !ok {
-				return nil, fmt.Errorf("unknown project ID in response: %v (for %v)", mod.ID, mod.Name)
+		if _, ok := indexMap[mod.ID]; !ok {
+			return nil, fmt.Errorf("响应中的未知项目ID：%v（用于 %v）", mod.ID, mod.Name)
 			}
 			for _, v := range indexMap[mod.ID] {
 				downloaderData[v] = &cfDownloadMetadata{
@@ -557,10 +557,10 @@ func (c cfDownloader) GetFilesMetadata(mods []*core.Mod) ([]core.MetaDownloaderD
 		}
 	}
 
-	// Ensure all files got data
+	// 确保所有文件都有数据
 	for i, v := range downloaderData {
 		if v == nil {
-			return nil, fmt.Errorf("did not get CurseForge metadata for %s", mods[i].Name)
+			return nil, fmt.Errorf("未获取到 %s 的CurseForge元数据", mods[i].Name)
 		}
 	}
 
@@ -589,16 +589,16 @@ func (m *cfDownloadMetadata) GetManualDownload() (bool, core.ManualDownload) {
 func (m *cfDownloadMetadata) DownloadFile() (io.ReadCloser, error) {
 	resp, err := core.GetWithUA(m.url, "application/octet-stream")
 	if err != nil {
-		return nil, fmt.Errorf("failed to download %s: %w", m.url, err)
+		return nil, fmt.Errorf("下载 %s 失败：%w", m.url, err)
 	}
 	if resp.StatusCode != 200 {
 		_ = resp.Body.Close()
-		return nil, fmt.Errorf("failed to download %s: invalid status code %v", m.url, resp.StatusCode)
+		return nil, fmt.Errorf("下载 %s 失败：无效的状态码 %v", m.url, resp.StatusCode)
 	}
 	return resp.Body, nil
 }
 
-// mapDepOverride transforms manual dependency overrides (which will likely be removed when packwiz is able to determine provided mods)
+// mapDepOverride 转换手动依赖覆盖（当packwiz能够确定提供的mod时，这可能会被移除）
 func mapDepOverride(depID uint32, isQuilt bool, mcVersion string) uint32 {
 	if isQuilt && depID == 306612 {
 		// Transform FAPI dependencies to QFAPI/QSL dependencies when using Quilt

@@ -14,7 +14,7 @@ import (
 var githubCmd = &cobra.Command{
 	Use:     "github",
 	Aliases: []string{"gh"},
-	Short:   "Manage projects released on GitHub",
+	Short:   "管理在GitHub上发布的项目",
 }
 
 func init() {
@@ -43,7 +43,7 @@ func fetchRepo(slug string) (Repo, error) {
 	}
 
 	if repo.FullName == "" {
-		return repo, errors.New("invalid json while fetching project: " + slug)
+		return repo, errors.New("获取项目时JSON无效：" + slug)
 	}
 
 	return repo, nil
@@ -77,7 +77,7 @@ func (u ghUpdateData) ToMap() (map[string]interface{}, error) {
 }
 
 func (u Asset) getSha256() (string, error) {
-	// TODO potentionally cache downloads to speed things up and avoid getting ratelimited by github!
+	// TODO 可能缓存下载以加快速度并避免被github限制！
 	mainHasher, err := core.GetHashImpl("sha256")
 	if err != nil {
 		return "", err

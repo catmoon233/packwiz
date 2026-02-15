@@ -20,7 +20,7 @@ import (
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:     "add [URL|slug|search]",
-	Short:   "Add a project from a Modrinth URL, slug/project ID or search",
+	Short:   "从Modrinth URL、slug/项目ID或搜索添加项目",
 	Aliases: []string{"install", "get"},
 	Args:    cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -67,7 +67,7 @@ var installCmd = &cobra.Command{
 			// Try interpreting the argument as a slug/project ID, or project/version/CDN URL
 			parsedSlug, err = parseSlugOrUrl(args[0], &projectID, &version, &versionID, &versionFilename)
 			if err != nil {
-				fmt.Printf("Failed to parse URL: %v\n", err)
+				fmt.Printf("解析URL失败：%v\n", err)
 				os.Exit(1)
 			}
 		}
@@ -76,7 +76,7 @@ var installCmd = &cobra.Command{
 		if versionID != "" {
 			err = installVersionById(versionID, versionFilename, pack, &index)
 			if err != nil {
-				fmt.Printf("Failed to add project: %s\n", err)
+				fmt.Printf("添加项目失败：%s\n", err)
 				os.Exit(1)
 			}
 			return
@@ -93,7 +93,7 @@ var installCmd = &cobra.Command{
 					// Try to look up version number
 					versionData, err := resolveVersion(project, version)
 					if err != nil {
-						fmt.Printf("Failed to add project: %s\n", err)
+						fmt.Printf("添加项目失败：%s\n", err)
 						os.Exit(1)
 					}
 					err = installVersion(project, versionData, versionFilename, pack, &index)
@@ -107,7 +107,7 @@ var installCmd = &cobra.Command{
 				// No version specified; find latest
 				err = installProject(project, versionFilename, pack, &index)
 				if err != nil {
-					fmt.Printf("Failed to add project: %s\n", err)
+					fmt.Printf("添加项目失败：%s\n", err)
 					os.Exit(1)
 				}
 				return
@@ -118,11 +118,11 @@ var installCmd = &cobra.Command{
 		if projectID == "" || parsedSlug {
 			err = installViaSearch(strings.Join(args, " "), versionFilename, !parsedSlug, pack, &index)
 			if err != nil {
-				fmt.Printf("Failed to add project: %s\n", err)
+				fmt.Printf("添加项目失败：%s\n", err)
 				os.Exit(1)
 			}
 		} else {
-			fmt.Printf("Failed to add project: %s\n", err)
+			fmt.Printf("添加项目失败：%s\n", err)
 			os.Exit(1)
 		}
 	},
@@ -131,12 +131,12 @@ var installCmd = &cobra.Command{
 func installVersionById(versionId string, versionFilename string, pack core.Pack, index *core.Index) error {
 	version, err := mrDefaultClient.Versions.Get(versionId)
 	if err != nil {
-		return fmt.Errorf("failed to fetch version %s: %v", versionId, err)
+		return fmt.Errorf("获取版本 %s 失败：%v", versionId, err)
 	}
 
 	project, err := mrDefaultClient.Projects.Get(*version.ProjectID)
 	if err != nil {
-		return fmt.Errorf("failed to fetch project %s: %v", *version.ProjectID, err)
+		return fmt.Errorf("获取项目 %s 失败：%v", *version.ProjectID, err)
 	}
 
 	return installVersion(project, version, versionFilename, pack, index)
@@ -148,7 +148,7 @@ func installViaSearch(query string, versionFilename string, autoAcceptFirst bool
 		return err
 	}
 
-	fmt.Println("Searching Modrinth...")
+	fmt.Println("正在搜索Modrinth...")
 
 	results, err := getProjectIdsViaSearch(query, mcVersions)
 	if err != nil {
@@ -156,7 +156,7 @@ func installViaSearch(query string, versionFilename string, autoAcceptFirst bool
 	}
 
 	if len(results) == 0 {
-		return errors.New("no projects found")
+		return errors.New("未找到任何项目")
 	}
 
 	if viper.GetBool("non-interactive") || (len(results) == 1 && autoAcceptFirst) {
@@ -170,8 +170,8 @@ func installViaSearch(query string, versionFilename string, autoAcceptFirst bool
 	}
 
 	// Create menu for the user to choose the correct project
-	menu := wmenu.NewMenu("Choose a number:")
-	menu.Option("Cancel", nil, false, nil)
+	menu := wmenu.NewMenu("选择一个数字：")
+	menu.Option("取消", nil, false, nil)
 	for i, v := range results {
 		// Should be non-nil (Title is a required field)
 		menu.Option(*v.Title, v, i == 0, nil)
@@ -179,13 +179,14 @@ func installViaSearch(query string, versionFilename string, autoAcceptFirst bool
 
 	menu.Action(func(menuRes []wmenu.Opt) error {
 		if len(menuRes) != 1 || menuRes[0].Value == nil {
-			return errors.New("project selection cancelled")
+			return errors.New("已取消项目选择")
+		}
 		}
 
 		// Get the selected project
 		selectedProject, ok := menuRes[0].Value.(*modrinthApi.SearchResult)
 		if !ok {
-			return errors.New("error converting interface from wmenu")
+			return errors.New("从wmenu转换接口时出错")
 		}
 
 		// Install the selected project
@@ -203,10 +204,10 @@ func installViaSearch(query string, versionFilename string, autoAcceptFirst bool
 func installProject(project *modrinthApi.Project, versionFilename string, pack core.Pack, index *core.Index) error {
 	latestVersion, err := getLatestVersion(*project.ID, *project.Title, pack)
 	if err != nil {
-		return fmt.Errorf("failed to get latest version: %v", err)
+		return fmt.Errorf("获取最新版本失败：%v", err)
 	}
 	if latestVersion.ID == nil {
-		return errors.New("mod not available for the configured Minecraft version(s) (use the 'packwiz settings acceptable-versions' command to accept more) or loader")
+		return errors.New("mod不适用于配置的Minecraft版本（使用'packwiz settings acceptable-versions'命令以接受更多版本）或加载器")
 	}
 
 	return installVersion(project, latestVersion, versionFilename, pack, index)
@@ -222,7 +223,7 @@ type depMetadataStore struct {
 
 func installVersion(project *modrinthApi.Project, version *modrinthApi.Version, versionFilename string, pack core.Pack, index *core.Index) error {
 	if len(version.Files) == 0 {
-		return errors.New("version doesn't have any files attached")
+		return errors.New("版本没有任何附加文件")
 	}
 
 	if len(version.Dependencies) > 0 {
@@ -252,7 +253,7 @@ func installVersion(project *modrinthApi.Project, version *modrinthApi.Version, 
 		}
 
 		if len(depProjectIDPendingQueue)+len(depVersionIDPendingQueue) > 0 {
-			fmt.Println("Finding dependencies...")
+			fmt.Println("正在查找依赖项...")
 
 			cycles := 0
 			for len(depProjectIDPendingQueue)+len(depVersionIDPendingQueue) > 0 && cycles < maxCycles {
@@ -265,7 +266,7 @@ func installVersion(project *modrinthApi.Project, version *modrinthApi.Version, 
 							depProjectIDPendingQueue = append(depProjectIDPendingQueue, mapDepOverride(*v.ProjectID, isQuilt, mcVersion))
 						}
 					} else {
-						fmt.Printf("Error retrieving dependency data: %s\n", err.Error())
+						fmt.Printf("检索依赖数据时出错：%s\n", err.Error())
 					}
 					depVersionIDPendingQueue = depVersionIDPendingQueue[:0]
 				}
@@ -296,18 +297,18 @@ func installVersion(project *modrinthApi.Project, version *modrinthApi.Version, 
 				}
 				depProjects, err := mrDefaultClient.Projects.GetMultiple(depProjectIDPendingQueue)
 				if err != nil {
-					fmt.Printf("Error retrieving dependency data: %s\n", err.Error())
+					fmt.Printf("检索依赖数据时出错：%s\n", err.Error())
 				}
 				depProjectIDPendingQueue = depProjectIDPendingQueue[:0]
 
 				for _, project := range depProjects {
 					if project.ID == nil {
-						return errors.New("failed to get dependency data: invalid response")
+						return errors.New("获取依赖数据失败：响应无效")
 					}
 					// Get latest version - could reuse version lookup data but it's not as easy (particularly since the version won't necessarily be the latest)
 					latestVersion, err := getLatestVersion(*project.ID, *project.Title, pack)
 					if err != nil {
-						fmt.Printf("Failed to get latest version of dependency %v: %v\n", *project.Title, err)
+						fmt.Printf("获取依赖 %v 的最新版本失败：%v\n", *project.Title, err)
 						continue
 					}
 
@@ -341,26 +342,26 @@ func installVersion(project *modrinthApi.Project, version *modrinthApi.Version, 
 				cycles++
 			}
 			if cycles >= maxCycles {
-				return errors.New("dependencies recurse too deeply, try increasing maxCycles")
+				return errors.New("依赖项递归太深，尝试增加maxCycles")
 			}
 
 			if len(depMetadata) > 0 {
-				fmt.Println("Dependencies found:")
+				fmt.Println("找到依赖项：")
 				for _, v := range depMetadata {
 					fmt.Println(*v.projectInfo.Title)
 				}
 
-				if cmdshared.PromptYesNo("Would you like to add them? [Y/n]: ") {
+				if cmdshared.PromptYesNo("要添加它们吗？[Y/n]: ") {
 					for _, v := range depMetadata {
 						err := createFileMeta(v.projectInfo, v.versionInfo, v.fileInfo, pack, index)
 						if err != nil {
 							return err
 						}
-						fmt.Printf("Dependency \"%s\" successfully added! (%s)\n", *v.projectInfo.Title, *v.fileInfo.Filename)
+						fmt.Printf("依赖项 \"%s\" 成功添加！（%s）\n", *v.projectInfo.Title, *v.fileInfo.Filename)
 					}
 				}
 			} else {
-				fmt.Println("All dependencies are already added!")
+				fmt.Println("所有依赖项都已添加！")
 			}
 		}
 	}
@@ -393,7 +394,7 @@ func installVersion(project *modrinthApi.Project, version *modrinthApi.Version, 
 		return err
 	}
 
-	fmt.Printf("Project \"%s\" successfully added! (%s)\n", *project.Title, *file.Filename)
+	fmt.Printf("项目 \"%s\" 成功添加！（%s）\n", *project.Title, *file.Filename)
 	return nil
 }
 
@@ -411,13 +412,13 @@ func createFileMeta(project *modrinthApi.Project, version *modrinthApi.Version, 
 
 	side := getSide(project)
 	if side == "" {
-		fmt.Println("Warning: Project doesn't have a side that's supported; assuming universal. Server: " + *project.ServerSide + " Client: " + *project.ClientSide)
+		fmt.Println("警告：项目没有支持的side；假设为通用。Server: " + *project.ServerSide + " Client: " + *project.ClientSide)
 		side = core.UniversalSide
 	}
 
 	algorithm, hash := getBestHash(file)
 	if algorithm == "" {
-		return errors.New("file doesn't have a hash")
+		return errors.New("文件没有哈希")
 	}
 
 	modMeta := core.Mod{
@@ -464,7 +465,7 @@ var versionFilenameFlag string
 func init() {
 	modrinthCmd.AddCommand(installCmd)
 
-	installCmd.Flags().StringVar(&projectIDFlag, "project-id", "", "The Modrinth project ID to use")
-	installCmd.Flags().StringVar(&versionIDFlag, "version-id", "", "The Modrinth version ID to use")
-	installCmd.Flags().StringVar(&versionFilenameFlag, "version-filename", "", "The Modrinth version filename to use")
+	installCmd.Flags().StringVar(&projectIDFlag, "project-id", "", "要使用的Modrinth项目ID")
+	installCmd.Flags().StringVar(&versionIDFlag, "version-id", "", "要使用的Modrinth版本ID")
+	installCmd.Flags().StringVar(&versionFilenameFlag, "version-filename", "", "要使用的Modrinth版本文件名")
 }

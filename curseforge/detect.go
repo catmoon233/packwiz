@@ -15,10 +15,10 @@ import (
 // detectCmd represents the detect command
 var detectCmd = &cobra.Command{
 	Use:   "detect",
-	Short: "Detect .jar files in the mods folder (experimental)",
+	Short: "检测mods文件夹中的.jar文件（实验性）",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Loading modpack...")
+		fmt.Println("正在加载模组包...")
 		pack, err := core.LoadPack()
 		if err != nil {
 			fmt.Println(err)
@@ -44,7 +44,7 @@ var detectCmd = &cobra.Command{
 				// TODO: make this less bad
 				return nil
 			}
-			fmt.Println("Hashing " + path)
+			fmt.Println("正在计算哈希 " + path)
 			bytes, err := os.ReadFile(path)
 			if err != nil {
 				return err
@@ -58,7 +58,7 @@ var detectCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Printf("Found %d files, submitting...\n", len(hashes))
+		fmt.Printf("找到 %d 个文件，正在提交...\n", len(hashes))
 
 		res, err := cfDefaultClient.getFingerprintInfo(hashes)
 		if err != nil {
@@ -66,28 +66,28 @@ var detectCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Successfully matched %d files\n", len(res.ExactFingerprints))
+		fmt.Printf("成功匹配 %d 个文件\n", len(res.ExactFingerprints))
 		if len(res.PartialMatches) > 0 {
-			fmt.Println("The following fingerprints were partial and I don't know what to do!!!")
+			fmt.Println("以下指纹是部分匹配的，我不知道该怎么办！！！")
 			for _, v := range res.PartialMatches {
 				fmt.Printf("%s (%d)", modPaths[v], v)
 			}
 		}
 		if len(res.UnmatchedFingerprints) > 0 {
-			fmt.Printf("Failed to match the following %d files:\n", len(res.UnmatchedFingerprints))
+			fmt.Printf("无法匹配以下 %d 个文件：\n", len(res.UnmatchedFingerprints))
 			for _, v := range res.UnmatchedFingerprints {
 				fmt.Printf("%s (%d)\n", modPaths[v], v)
 			}
 		}
 
-		fmt.Println("Retrieving metadata...")
+		fmt.Println("正在检索元数据...")
 		ids := make([]uint32, len(res.ExactMatches))
 		for i, v := range res.ExactMatches {
 			ids[i] = v.ID
 		}
 		modInfos, err := cfDefaultClient.getModInfoMultiple(ids)
 		if err != nil {
-			fmt.Printf("Failed to retrieve metadata: %v", err)
+			fmt.Printf("检索元数据失败：%v", err)
 			os.Exit(1)
 		}
 		modInfosMap := make(map[uint32]modInfo)
@@ -95,7 +95,7 @@ var detectCmd = &cobra.Command{
 			modInfosMap[v.ID] = v
 		}
 
-		fmt.Println("Creating metadata files...")
+		fmt.Println("正在创建元数据文件...")
 		for _, v := range res.ExactMatches {
 			err = createModFile(modInfosMap[v.ID], v.File, &index, false)
 			if err != nil {
@@ -112,7 +112,7 @@ var detectCmd = &cobra.Command{
 				}
 			}
 		}
-		fmt.Println("Detection complete!")
+		fmt.Println("检测完成！")
 
 		err = index.Refresh()
 		if err != nil {

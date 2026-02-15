@@ -7,7 +7,7 @@ import (
 
 var urlCmd = &cobra.Command{
 	Use:   "url",
-	Short: "Add external files from a direct download link, for sites that are not directly supported by packwiz",
+	Short: "从直接下载链接添加外部文件，用于packwiz不直接支持的网站",
 }
 
 func init() {

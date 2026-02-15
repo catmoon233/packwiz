@@ -20,7 +20,7 @@ import (
 var modrinthCmd = &cobra.Command{
 	Use:     "modrinth",
 	Aliases: []string{"mr"},
-	Short:   "Manage modrinth-based mods",
+	Short:   "管理基于Modrinth的模组",
 }
 
 var mrDefaultClient = modrinthApi.NewClient(&http.Client{})
@@ -51,9 +51,9 @@ func getProjectIdsViaSearch(query string, versions []string) ([]*modrinthApi.Sea
 	return res.Hits, nil
 }
 
-// "Loaders" that are supported regardless of the configured mod loaders
+// 无论配置的mod加载器如何都支持的"加载器"
 var defaultMRLoaders = []string{
-	// TODO: check if Canvas/Iris/Optifine are installed? suggest installing them?
+	// TODO: 检查是否安装了Canvas/Iris/Optifine？建议安装它们？
 	"canvas",
 	"iris",
 	"optifine",
@@ -67,7 +67,7 @@ var withDatapackPathMRLoaders = []string{
 	"optifine",
 	"vanilla",   // Core shaders
 	"minecraft", // Resource packs
-	// TODO: check if a datapack loader is installed; suggest installing one?
+	// TODO: 检查是否安装了datapack加载器；建议安装一个？
 	"datapack", // Datapacks (requires a datapack loader)
 }
 
@@ -93,44 +93,44 @@ var loaderFolders = map[string]string{
 	"vanilla":    "resourcepacks",
 }
 
-// Preference list for loader types, for comparing files where the version is the same - more preferred is lower
+// 用于比较具有相同版本的文件的加载器类型的首选项列表 - 更偏向的索引更低
 var loaderPreferenceList = []string{
-	// Prefer quilt versions over fabric versions
+	// 偏好quilt版本而不是fabric版本
 	"quilt",
 	"fabric",
-	// Prefer neoforge versions over forge versions
+	// 偏好neoforge版本而不是forge版本
 	"neoforge",
 	"forge",
 	"liteloader",
 	"modloader",
 	"rift",
-	// Prefer mods to plugins
+	// 偏好mod而不是插件
 	"sponge",
-	// Prefer newer Bukkit forks
+	// 偏好更新的Bukkit分支
 	"purpur",
 	"paper",
 	"spigot",
 	"bukkit",
 	"velocity",
-	// Prefer newer BungeeCord forks
+	// 偏好更新的BungeeCord分支
 	"waterfall",
 	"bungeecord",
-	// Prefer Canvas shaders to Iris shaders to Optifine shaders to core shaders
+	// 偏好Canvas着色器而不是Iris着色器而不是Optifine着色器而不是核心着色器
 	"canvas",
 	"iris",
 	"optifine",
 	"vanilla",
-	// Prefer mods to datapacks
+	// 偏好mod而不是datapacks
 	"datapack",
-	// Prefer mods to resource packs?! Idk this is just here for completeness
+	// 偏好mod而不是资源包？！这只是为了完整性而存在
 	"minecraft",
 }
 
-// Groups of loaders that should be treated the same as the key, if both versions support the key
-// i.e. the key is a more "generic" loader; support for it implies support for the whole group
-// e.g. [quilt, fabric] should compare equal to [fabric] (but less than [quilt] as Quilt support doesn't imply Fabric support)
-// This is useful when authors forget to add Quilt/Purpur etc. to all versions
-// TODO: make abstracted from source backend
+// 应该被视为与键相同的加载器组，如果两个版本都支持该键
+// 即键是更"通用"的加载器；对它的支持意味着对整个组的支持
+// 例如 [quilt, fabric] 应该与 [fabric] 比较相等（但小于 [quilt]，因为Quilt支持并不意味着Fabric支持）
+// 当作者忘记将Quilt/Purpur等添加到所有版本时，这很有用
+// TODO: 从后端源抽象
 var loaderCompatGroups = map[string][]string{
 	"fabric":     {"quilt"},
 	"forge":      {"neoforge"},
@@ -140,7 +140,7 @@ var loaderCompatGroups = map[string][]string{
 
 func getProjectTypeFolder(projectType string, fileLoaders []string, packLoaders []string) (string, error) {
 	if projectType == "modpack" {
-		return "", errors.New("this command should not be used to add Modrinth modpacks, and importing of Modrinth modpacks is not yet supported")
+		return "", errors.New("此命令不应用于添加Modrinth模组包，并且尚不支持导入Modrinth模组包")
 	} else if projectType == "resourcepack" {
 		return "resourcepacks", nil
 	} else if projectType == "shader" {
@@ -156,7 +156,7 @@ func getProjectTypeFolder(projectType string, fileLoaders []string, packLoaders 
 		}
 		return "shaderpacks", nil
 	} else if projectType == "mod" {
-		// Look up pack loaders in the list of loaders (note this is currently filtered to quilt/fabric/neoforge/forge)
+		// 在加载器列表中查找包加载器（注意这当前过滤为quilt/fabric/neoforge/forge）
 		bestLoaderIdx := math.MaxInt
 		for _, v := range fileLoaders {
 			if slices.Contains(packLoaders, v) {
@@ -170,18 +170,18 @@ func getProjectTypeFolder(projectType string, fileLoaders []string, packLoaders 
 			return loaderFolders[loaderPreferenceList[bestLoaderIdx]], nil
 		}
 
-		// Datapack loader is "datapack"
+		// Datapack加载器是"datapack"
 		if slices.Contains(fileLoaders, "datapack") {
 			if viper.GetString("datapack-folder") != "" {
 				return viper.GetString("datapack-folder"), nil
 			} else {
-				return "", errors.New("set the datapack-folder option to use datapacks")
+				return "", errors.New("设置datapack-folder选项以使用datapacks")
 			}
 		}
-		// Default to "mods" for mod type
+		// 默认mod类型为"mods"
 		return "mods", nil
 	} else {
-		return "", fmt.Errorf("unknown project type %s", projectType)
+		return "", fmt.Errorf("未知的项目类型 %s", projectType)
 	}
 }
 
@@ -241,11 +241,11 @@ func compareLoaderLists(a []string, b []string) int32 {
 			compat = append(compat, v...)
 		}
 	}
-	// Prefer loaders; principally Quilt over Fabric, mods over datapacks (Modrinth backend handles filtering)
+		// 偏好加载器；主要是Quilt而不是Fabric，mod而不是datapacks（Modrinth后端处理过滤）
 	minIdxA := math.MaxInt
 	for _, v := range a {
 		if slices.Contains(compat, v) {
-			// Ignore loaders in compat groups for comparison
+			// 比较时忽略compat组中的加载器
 			continue
 		}
 		idx := slices.Index(loaderPreferenceList, v)
@@ -256,19 +256,19 @@ func compareLoaderLists(a []string, b []string) int32 {
 	minIdxB := math.MaxInt
 	for _, v := range b {
 		if slices.Contains(compat, v) {
-			// Ignore loaders in compat groups for comparison
+			// 比较时忽略compat组中的加载器
 			continue
 		}
 		idx := slices.Index(loaderPreferenceList, v)
-		if idx != -1 && idx < minIdxA {
-			return 1 // B has more preferable loaders
+	if idx != -1 && idx < minIdxA {
+		return 1 // B有更偏好的加载器
 		}
 		if idx != -1 && idx < minIdxB {
 			minIdxB = idx
 		}
 	}
 	if minIdxA < minIdxB {
-		return -1 // A has more preferable loaders
+		return -1 // A有更偏好的加载器
 	}
 	return 0
 }
@@ -293,7 +293,7 @@ func findLatestVersion(versions []*modrinthApi.Version, gameVersions []string, u
 			compare = compareLoaderLists(latestValidVersion.Loaders, v.Loaders)
 		}
 		if compare == 0 {
-			// Other comparisons are equal, compare date instead
+			// 其他比较相等，按日期比较
 			if v.DatePublished.After(*latestValidVersion.DatePublished) {
 				compare = 1
 			}
@@ -324,19 +324,19 @@ func getLatestVersion(projectID string, name string, pack core.Pack) (*modrinthA
 		Loaders:      loaders,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch latest version: %w", err)
+		return nil, fmt.Errorf("获取最新版本失败：%w", err)
 	}
 	if len(result) == 0 {
-		// TODO: retry with datapack specified, to determine what the issue is? or just request all and filter afterwards
-		return nil, errors.New("no valid versions found\n\tUse the 'packwiz settings acceptable-versions' command to accept more game versions\n\tTo use datapacks, add a datapack loader mod and specify the datapack-folder option with the folder this mod loads datapacks from")
+		// TODO: 重试时指定datapack，以确定问题是什么？或者只是请求所有并稍后过滤
+		return nil, errors.New("未找到有效版本\n\t使用'packwiz settings acceptable-versions'命令以接受更多游戏版本\n\t要使用datapacks，请添加一个datapack加载器mod，并使用该mod加载datapacks的文件夹指定datapack-folder选项")
 	}
 
-	// TODO: option to always compare using flexver?
-	// TODO: ask user which one to use?
+	// TODO: 始终使用flexver进行比较的选项？
+	// TODO: 询问用户使用哪一个？
 	flexverLatest := findLatestVersion(result, gameVersions, true)
 	releaseDateLatest := findLatestVersion(result, gameVersions, false)
 	if flexverLatest != releaseDateLatest && releaseDateLatest.VersionNumber != nil && flexverLatest.VersionNumber != nil {
-		fmt.Printf("Warning: Modrinth versions for %s inconsistent between latest version number and newest release date (%s vs %s)\n", name, *flexverLatest.VersionNumber, *releaseDateLatest.VersionNumber)
+		fmt.Printf("警告：%s的Modrinth版本在最新版本号和最新发布日期之间不一致（%s vs %s）\n", name, *flexverLatest.VersionNumber, *releaseDateLatest.VersionNumber)
 	}
 
 	return releaseDateLatest, nil
@@ -362,8 +362,8 @@ func shouldDownloadOnSide(side string) bool {
 }
 
 func getBestHash(v *modrinthApi.File) (string, string) {
-	// Try preferred hashes first; SHA1 is required for Modrinth pack exporting, but
-	// so is SHA512, so we can't win with the current one-hash format
+	// 优先尝试首选哈希；SHA1是Modrinth包导出所必需的，但
+	// SHA512也是，所以我们无法用当前的单哈希格式获胜
 	val, exists := v.Hashes["sha512"]
 	if exists {
 		return "sha512", val
@@ -376,26 +376,26 @@ func getBestHash(v *modrinthApi.File) (string, string) {
 	if exists {
 		return "sha1", val
 	}
-	val, exists = v.Hashes["murmur2"] // (not defined in Modrinth pack spec, use with caution)
+	val, exists = v.Hashes["murmur2"] // （在Modrinth包规范中未定义，请谨慎使用）
 	if exists {
 		return "murmur2", val
 	}
 
-	//none of the preferred hashes are present, just get the first one
+	// 没有首选哈希存在，只需获取第一个
 	for key, val := range v.Hashes {
 		return key, val
 	}
 
-	//No hashes were present
+	// 没有哈希存在
 	return "", ""
 }
 
 func getInstalledProjectIDs(index *core.Index) []string {
 	var installedProjects []string
-	// Get modids of all mods
+	// 获取所有模组的modids
 	mods, err := index.LoadAllMods()
 	if err != nil {
-		fmt.Printf("Failed to determine existing projects: %v\n", err)
+		fmt.Printf("无法确定现有项目：%v\n", err)
 	} else {
 		for _, mod := range mods {
 			data, ok := mod.GetParsedUpdateData("modrinth")
@@ -413,31 +413,31 @@ func getInstalledProjectIDs(index *core.Index) []string {
 }
 
 func resolveVersion(project *modrinthApi.Project, version string) (*modrinthApi.Version, error) {
-	// If it exists in the version list, it is already a version ID (and doesn't need querying further)
+	// 如果它存在于版本列表中，它已经是一个版本ID（并且不需要进一步查询）
 	if slices.Contains(project.Versions, version) {
 		versionData, err := mrDefaultClient.Versions.Get(version)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch version %s: %v", version, err)
+			return nil, fmt.Errorf("获取版本 %s 失败：%v", version, err)
 		}
 		return versionData, nil
 	}
 
-	// Look up all versions
-	// TODO: PR a version number filter to Modrinth?
+	// 查找所有版本
+	// TODO: 向Modrinth提交PR以添加版本号过滤器？
 	versionsList, err := mrDefaultClient.Versions.ListVersions(*project.ID, modrinthApi.ListVersionsOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch version list for %s: %v", *project.ID, err)
+		return nil, fmt.Errorf("获取 %s 的版本列表失败：%v", *project.ID, err)
 	}
-	// Traverse in reverse order: Modrinth knossos always gives the oldest file precedence over having the version number path
+	// 反向遍历：Modrinth knossos总是给最旧的文件而不是版本号路径优先权
 	for i := len(versionsList) - 1; i >= 0; i-- {
 		if *versionsList[i].VersionNumber == version {
 			return versionsList[i], nil
 		}
 	}
-	return nil, fmt.Errorf("unable to find version %s", version)
+	return nil, fmt.Errorf("无法找到版本 %s", version)
 }
 
-// mapDepOverride transforms manual dependency overrides (which will likely be removed when packwiz is able to determine provided mods)
+// mapDepOverride 转换手动依赖覆盖（当packwiz能够确定提供的mod时，这可能会被移除）
 func mapDepOverride(depID string, isQuilt bool, mcVersion string) string {
 	if isQuilt && (depID == "P7dR8mSH" || depID == "fabric-api") {
 		// Transform FAPI dependencies to QFAPI/QSL dependencies when using Quilt

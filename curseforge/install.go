@@ -26,7 +26,7 @@ type installableDep struct {
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:     "add [URL|slug|search]",
-	Short:   "Add a project from a CurseForge URL, slug, ID or search",
+	Short:   "从CurseForge URL、slug、ID或搜索添加项目",
 	Aliases: []string{"install", "get"},
 	Args:    cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -65,13 +65,13 @@ var installCmd = &cobra.Command{
 		}
 
 		if (len(args) == 0 || len(args[0]) == 0) && modID == 0 {
-			fmt.Println("You must specify a project; with the ID flags, or by passing a URL, slug or search term directly.")
+			fmt.Println("必须指定一个项目；使用ID标志，或直接传递URL、slug或搜索词。")
 			os.Exit(1)
 		}
 		if modID == 0 && len(args) == 1 {
 			parsedGame, parsedCategory, parsedSlug, parsedFileID, err := parseSlugOrUrl(args[0])
 			if err != nil {
-				fmt.Printf("Failed to parse URL: %v\n", err)
+				fmt.Printf("解析URL失败：%v\n", err)
 				os.Exit(1)
 			}
 
@@ -108,14 +108,14 @@ var installCmd = &cobra.Command{
 		}
 
 		if modID == 0 {
-			fmt.Println("No projects found!")
+			fmt.Println("未找到任何项目！")
 			os.Exit(1)
 		}
 
 		if !modInfoObtained {
 			modInfoData, err = cfDefaultClient.getModInfo(modID)
 			if err != nil {
-				fmt.Printf("Failed to get project info: %v\n", err)
+				fmt.Printf("获取项目信息失败：%v\n", err)
 				os.Exit(1)
 			}
 		}
@@ -123,7 +123,7 @@ var installCmd = &cobra.Command{
 		var fileInfoData modFileInfo
 		fileInfoData, err = getLatestFile(modInfoData, mcVersions, fileID, pack.GetCompatibleLoaders())
 		if err != nil {
-			fmt.Printf("Failed to get file for project: %v\n", err)
+			fmt.Printf("获取项目文件失败：%v\n", err)
 			os.Exit(1)
 		}
 
@@ -139,16 +139,16 @@ var installCmd = &cobra.Command{
 			}
 
 			if len(depIDPendingQueue) > 0 {
-				fmt.Println("Finding dependencies...")
+				fmt.Println("正在查找依赖项...")
 
 				cycles := 0
 				var installedIDList []uint32
 				for len(depIDPendingQueue) > 0 && cycles < maxCycles {
 					if installedIDList == nil {
-						// Get modids of all mods
+						// 获取所有模组的modids
 						mods, err := index.LoadAllMods()
 						if err != nil {
-							fmt.Printf("Failed to determine existing projects: %v\n", err)
+							fmt.Printf("无法确定现有项目：%v\n", err)
 						} else {
 							for _, mod := range mods {
 								data, ok := mod.GetParsedUpdateData("curseforge")
@@ -187,14 +187,14 @@ var installCmd = &cobra.Command{
 
 					depInfoData, err := cfDefaultClient.getModInfoMultiple(depIDPendingQueue)
 					if err != nil {
-						fmt.Printf("Error retrieving dependency data: %s\n", err.Error())
+						fmt.Printf("检索依赖数据时出错：%s\n", err.Error())
 					}
 					depIDPendingQueue = depIDPendingQueue[:0]
 
 					for _, currData := range depInfoData {
 						depFileInfo, err := getLatestFile(currData, mcVersions, 0, pack.GetCompatibleLoaders())
 						if err != nil {
-							fmt.Printf("Error retrieving dependency data: %s\n", err.Error())
+							fmt.Printf("检索依赖数据时出错：%s\n", err.Error())
 							continue
 						}
 
@@ -212,28 +212,28 @@ var installCmd = &cobra.Command{
 					cycles++
 				}
 				if cycles >= maxCycles {
-					fmt.Println("Dependencies recurse too deeply! Try increasing maxCycles.")
+					fmt.Println("依赖项递归太深！尝试增加maxCycles。")
 					os.Exit(1)
 				}
 
 				if len(depsInstallable) > 0 {
-					fmt.Println("Dependencies found:")
+					fmt.Println("找到依赖项：")
 					for _, v := range depsInstallable {
 						fmt.Println(v.Name)
 					}
 
-					if cmdshared.PromptYesNo("Would you like to add them? [Y/n]: ") {
+					if cmdshared.PromptYesNo("要添加它们吗？[Y/n]: ") {
 						for _, v := range depsInstallable {
 							err = createModFile(v.modInfo, v.fileInfo, &index, false)
 							if err != nil {
 								fmt.Println(err)
 								os.Exit(1)
 							}
-							fmt.Printf("Dependency \"%s\" successfully added! (%s)\n", v.modInfo.Name, v.fileInfo.FileName)
+							fmt.Printf("依赖项 \"%s\" 成功添加！（%s）\n", v.modInfo.Name, v.fileInfo.FileName)
 						}
 					}
 				} else {
-					fmt.Println("All dependencies are already added!")
+					fmt.Println("所有依赖项都已添加！")
 				}
 			}
 		}
@@ -260,7 +260,7 @@ var installCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Project \"%s\" successfully added! (%s)\n", modInfoData.Name, fileInfoData.FileName)
+		fmt.Printf("项目 \"%s\" 成功添加！（%s）\n", modInfoData.Name, fileInfoData.FileName)
 	},
 }
 
@@ -277,9 +277,9 @@ func (r modResultsList) Len() int {
 
 func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, category string, mcVersions []string, searchLoaderType modloaderType) (bool, modInfo) {
 	if isSlug {
-		fmt.Println("Looking up CurseForge slug...")
+		fmt.Println("正在查找CurseForge slug...")
 	} else {
-		fmt.Println("Searching CurseForge...")
+		fmt.Println("正在搜索CurseForge...")
 	}
 
 	var gameID, categoryID, classID uint32
@@ -298,11 +298,11 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 		for _, v := range games {
 			if v.Slug == game {
 				if v.Status != gameStatusLive {
-					fmt.Printf("Failed to lookup game %s: selected game is not live!\n", game)
+					fmt.Printf("查找游戏 %s 失败：所选游戏未上线！\n", game)
 					os.Exit(1)
 				}
 				if v.APIStatus != gameApiStatusPublic {
-					fmt.Printf("Failed to lookup game %s: selected game does not have a public API!\n", game)
+					fmt.Printf("查找游戏 %s 失败：所选游戏没有公共API！\n", game)
 					os.Exit(1)
 				}
 				gameID = v.ID
@@ -310,14 +310,14 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 			}
 		}
 		if gameID == 0 {
-			fmt.Printf("Failed to lookup: game %s could not be found!\n", game)
+			fmt.Printf("查找失败：找不到游戏 %s！\n", game)
 			os.Exit(1)
 		}
 	}
-	if categoryID == 0 && classID == 0 && category != "" {
-		categories, err := cfDefaultClient.getCategories(gameID)
-		if err != nil {
-			fmt.Printf("Failed to lookup categories: %v\n", err)
+		if categoryID == 0 && classID == 0 && category != "" {
+			categories, err := cfDefaultClient.getCategories(gameID)
+			if err != nil {
+				fmt.Printf("查找类别失败：%v\n", err)
 			os.Exit(1)
 		}
 		for _, v := range categories {
@@ -332,7 +332,7 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 			}
 		}
 		if categoryID == 0 && classID == 0 {
-			fmt.Printf("Failed to lookup: category %s could not be found!\n", category)
+			fmt.Printf("查找失败：找不到类别 %s！\n", category)
 			os.Exit(1)
 		}
 	}
@@ -350,11 +350,11 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 	}
 	results, err := cfDefaultClient.getSearch(search, slug, gameID, classID, categoryID, filterGameVersion, searchLoaderType)
 	if err != nil {
-		fmt.Printf("Failed to search for project: %v\n", err)
+		fmt.Printf("搜索项目失败：%v\n", err)
 		os.Exit(1)
 	}
 	if len(results) == 0 {
-		fmt.Println("No projects found!")
+		fmt.Println("未找到任何项目！")
 		os.Exit(1)
 		return false, modInfo{}
 	} else if len(results) == 1 {
@@ -370,9 +370,9 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 			return false, results[0]
 		}
 
-		menu := wmenu.NewMenu("Choose a number:")
+		menu := wmenu.NewMenu("选择一个数字：")
 
-		menu.Option("Cancel", nil, false, nil)
+		menu.Option("取消", nil, false, nil)
 		if len(fuzzySearchResults) == 0 {
 			for i, v := range results {
 				menu.Option(v.Name+" ("+v.Summary+")", v, i == 0, nil)
@@ -387,7 +387,7 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 		var cancelled bool
 		menu.Action(func(menuRes []wmenu.Opt) error {
 			if len(menuRes) != 1 || menuRes[0].Value == nil {
-				fmt.Println("Cancelled!")
+				fmt.Println("已取消！")
 				cancelled = true
 				return nil
 			}
@@ -396,7 +396,7 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 			var ok bool
 			modInfoData, ok = menuRes[0].Value.(modInfo)
 			if !ok {
-				return errors.New("error converting interface from wmenu")
+				return errors.New("从wmenu转换接口时出错")
 			}
 			return nil
 		})
@@ -416,7 +416,7 @@ func searchCurseforgeInternal(searchTerm string, isSlug bool, game string, categ
 func getLatestFile(modInfoData modInfo, mcVersions []string, fileID uint32, packLoaders []string) (modFileInfo, error) {
 	if fileID == 0 {
 		if len(modInfoData.LatestFiles) == 0 && len(modInfoData.GameVersionLatestFiles) == 0 {
-			return modFileInfo{}, fmt.Errorf("addon %d has no files", modInfoData.ID)
+			return modFileInfo{}, fmt.Errorf("addon %d 没有文件", modInfoData.ID)
 		}
 
 		var fileInfoData *modFileInfo
@@ -427,7 +427,7 @@ func getLatestFile(modInfoData modInfo, mcVersions []string, fileID uint32, pack
 
 		// Possible to reach this point without obtaining file info; particularly from GameVersionLatestFiles
 		if fileID == 0 {
-			return modFileInfo{}, errors.New("mod not available for the configured Minecraft version(s) (use the 'packwiz settings acceptable-versions' command to accept more) or loader")
+			return modFileInfo{}, errors.New("mod不适用于配置的Minecraft版本（使用'packwiz settings acceptable-versions'命令以接受更多版本）或加载器")
 		}
 	}
 
@@ -447,8 +447,8 @@ var categoryFlag string
 func init() {
 	curseforgeCmd.AddCommand(installCmd)
 
-	installCmd.Flags().Uint32Var(&addonIDFlag, "addon-id", 0, "The CurseForge project ID to use")
-	installCmd.Flags().Uint32Var(&fileIDFlag, "file-id", 0, "The CurseForge file ID to use")
-	installCmd.Flags().StringVar(&gameFlag, "game", "minecraft", "The game to add files from (slug, as stored in URLs); the game in the URL takes precedence")
-	installCmd.Flags().StringVar(&categoryFlag, "category", "", "The category to add files from (slug, as stored in URLs); the category in the URL takes precedence")
+	installCmd.Flags().Uint32Var(&addonIDFlag, "addon-id", 0, "要使用的CurseForge项目ID")
+	installCmd.Flags().Uint32Var(&fileIDFlag, "file-id", 0, "要使用的CurseForge文件ID")
+	installCmd.Flags().StringVar(&gameFlag, "game", "minecraft", "要从中添加文件的游戏（slug，如存储在URL中）；URL中的游戏优先")
+	installCmd.Flags().StringVar(&categoryFlag, "category", "", "要从中添加文件的类别（slug，如存储在URL中）；URL中的类别优先")
 }
